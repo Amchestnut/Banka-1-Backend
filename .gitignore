@@ -6,6 +6,32 @@
 build/
 out/
 
+# Maven
+target/
+
+# Node.js
+node_modules/
+dist/
+.npm/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Go
+bin/
+*.exe
+
+# .NET
+*/bin/
+*/obj/
+*.user
+*.suo
+
 # IDE - IntelliJ IDEA
 /.idea/
 *.iml
@@ -39,6 +65,7 @@ desktop.ini
 # Environment / secrets
 .env
 *.env
+!.env.example
 application-local.properties
 application-local.yml
 application-local.yaml
@@ -54,3 +81,6 @@ reports/
 *.bak
 *.swp
 *~
+
+# Misc
+*.pdf

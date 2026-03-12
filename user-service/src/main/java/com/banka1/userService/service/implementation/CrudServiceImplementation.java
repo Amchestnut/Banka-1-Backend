@@ -107,7 +107,7 @@ public class CrudServiceImplementation implements CrudService {
         EmailDto emailDto = new EmailDto(
                 zaposlen.getIme(),
                 zaposlen.getEmail(),
-                EmailType.ACTIVATION,
+                EmailType.EMPLOYEE_CREATED,
                 activateAccount + generated);
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -179,7 +179,7 @@ public class CrudServiceImplementation implements CrudService {
             EmailDto emailDto = new EmailDto(
                     zaposlen.getIme(),
                     zaposlen.getEmail(),
-                    EmailType.ACCOUNT_DEACTIVATION
+                    EmailType.EMPLOYEE_ACCOUNT_DEACTIVATED
             );
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
@@ -227,7 +227,7 @@ public class CrudServiceImplementation implements CrudService {
         EmailDto emailDto = new EmailDto(
                 zaposlen.getIme(),
                 zaposlen.getEmail(),
-                EmailType.ACCOUNT_DEACTIVATION
+                EmailType.EMPLOYEE_ACCOUNT_DEACTIVATED
         );
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {

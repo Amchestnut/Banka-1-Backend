@@ -234,7 +234,7 @@ public class AuthServiceImplementation implements AuthService {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                rabbitClient.sendEmailNotification(new EmailDto(zaposlen.getIme(), zaposlen.getEmail(), EmailType.PASSWORD_RESET, urlResetPassword + generated));
+                rabbitClient.sendEmailNotification(new EmailDto(zaposlen.getIme(), zaposlen.getEmail(), EmailType.EMPLOYEE_PASSWORD_RESET, urlResetPassword + generated));
             }
         });
         return "Poslat mejl";
@@ -284,7 +284,7 @@ public class AuthServiceImplementation implements AuthService {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                rabbitClient.sendEmailNotification(new EmailDto(zaposlen.getIme(), zaposlen.getEmail(), EmailType.ACTIVATION, urlActivateAccount + generated));
+                rabbitClient.sendEmailNotification(new EmailDto(zaposlen.getIme(), zaposlen.getEmail(), EmailType.EMPLOYEE_CREATED, urlActivateAccount + generated));
             }
         });
         return "Poslat mejl";

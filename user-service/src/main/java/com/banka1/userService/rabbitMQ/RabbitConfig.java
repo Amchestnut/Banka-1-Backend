@@ -2,7 +2,7 @@ package com.banka1.userService.rabbitMQ;
 
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -97,24 +97,24 @@ public class RabbitConfig {
     }
 
     /**
-     * Kreira direct exchange za rutiranje email poruka.
+     * Kreira topic exchange za rutiranje notifikacija.
      *
-     * @return deklarisani direct exchange
+     * @return deklarisani topic exchange
      */
     @Bean
-    public DirectExchange directExchange() {
-        return new DirectExchange(exchangeName);
+    public TopicExchange topicExchange() {
+        return new TopicExchange(exchangeName);
     }
 
     /**
      * Povezuje queue i exchange preko konfigurisanog routing kljuca.
      *
      * @param queue queue koji prima poruke
-     * @param directExchange exchange preko kog se poruke rutiraju
+     * @param topicExchange exchange preko kog se poruke rutiraju
      * @return deklarisani binding
      */
     @Bean
-    public Binding binding(Queue queue, DirectExchange directExchange) {
-        return BindingBuilder.bind(queue).to(directExchange).with(routingKey);
+    public Binding binding(Queue queue, TopicExchange topicExchange) {
+        return BindingBuilder.bind(queue).to(topicExchange).with(routingKey);
     }
 }

@@ -21,16 +21,12 @@ public class RabbitClient {
     @Value("${rabbitmq.exchange}")
     private String exchange;
 
-    /** Routing kljuc koji odredjuje na koji queue ce poruka biti rutirana. */
-    @Value("${rabbitmq.routing-key}")
-    private String routingKey;
-
     /**
-     * Salje email notifikaciju na RabbitMQ exchange sa konfigurisanom routing putanjom.
+     * Salje email notifikaciju na RabbitMQ exchange koristeci routing key iz tipa poruke.
      *
      * @param dto payload poruke koja se prosledjuje email servisu
      */
     public void sendEmailNotification(EmailDto dto) {
-        rabbitTemplate.convertAndSend(exchange, routingKey, dto);
+        rabbitTemplate.convertAndSend(exchange, dto.getEmailType().getRoutingKey(), dto);
     }
 }

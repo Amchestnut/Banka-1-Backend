@@ -16,22 +16,26 @@ import lombok.Setter;
 @Setter
 public class ResetLinkDto {
 
-    /** Link za reset lozinke (popunjava se samo za {@link EmailType#PASSWORD_RESET}). */
+    /**
+     * Link za reset lozinke (popunjava se samo za {@link EmailType#EMPLOYEE_PASSWORD_RESET}).
+     */
     private String resetLink;
 
-    /** Link za aktivaciju naloga (popunjava se samo za {@link EmailType#ACTIVATION}). */
+    /**
+     * Link za aktivaciju naloga (popunjava se samo za {@link EmailType#EMPLOYEE_CREATED}).
+     */
     private String activationLink;
 
     /**
      * Popunjava odgovarajuce polje za link na osnovu tipa email poruke.
      *
-     * @param email link za reset lozinke ili aktivaciju naloga
+     * @param email     link za reset lozinke ili aktivaciju naloga
      * @param emailType tip mejla koji odredjuje koje polje se popunjava
      */
     public ResetLinkDto(String email, EmailType emailType) {
         switch (emailType) {
-            case EmailType.PASSWORD_RESET -> resetLink = email;
-            case EmailType.ACTIVATION -> activationLink = email;
+            case EmailType.EMPLOYEE_PASSWORD_RESET -> resetLink = email;
+            case EmailType.EMPLOYEE_CREATED -> activationLink = email;
             default -> throw new IllegalStateException("Kako si ovo uspeo majke ti");
         }
     }

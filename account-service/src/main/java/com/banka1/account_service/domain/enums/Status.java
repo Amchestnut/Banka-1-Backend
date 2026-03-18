@@ -1,5 +1,5 @@
 package com.banka1.account_service.domain.enums;
 
-public enum AccountStatus {
+public enum Status {
     ACTIVE,INACTIVE
 }

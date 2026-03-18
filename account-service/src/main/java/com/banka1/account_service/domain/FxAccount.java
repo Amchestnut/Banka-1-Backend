@@ -1,9 +1,10 @@
 package com.banka1.account_service.domain;
 
-import com.banka1.account_service.domain.enums.AccountStatus;
+import com.banka1.account_service.domain.enums.CurrencyCode;
+import com.banka1.account_service.domain.enums.Status;
 import com.banka1.account_service.domain.enums.AccountOwnershipType;
-import com.banka1.account_service.domain.enums.Currency;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -17,23 +18,29 @@ import java.time.LocalDateTime;
 @Setter
 @Entity
 @DiscriminatorValue("FX")
+@AllArgsConstructor
 //todo fk firma instanca
 public class FxAccount extends Account {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AccountOwnershipType accountOwnershipType;
 
-    public FxAccount(String brojRacuna, String nazivRacuna, Long vlasnik, BigDecimal stanje, BigDecimal raspolozivoStanje, Long zaposleni, LocalDateTime datumIVremeKreiranja, LocalDate datumIsteka, Currency currency, AccountStatus status, BigDecimal dnevniLimit, BigDecimal mesecniLimit, BigDecimal dnevnaPotrosnja, BigDecimal mesecnaPotrosnja, AccountOwnershipType accountOwnershipType) {
-        super(brojRacuna, nazivRacuna, vlasnik, stanje, raspolozivoStanje, zaposleni, datumIVremeKreiranja, datumIsteka, status, dnevniLimit, mesecniLimit, dnevnaPotrosnja, mesecnaPotrosnja);
-        this.setCurrency(currency);
-        this.accountOwnershipType = accountOwnershipType;
+
+    @PrePersist
+    @PreUpdate
+    private void validate() {
+        if (accountOwnershipType == AccountOwnershipType.BUSINESS && this.getCompany() == null) {
+            throw new IllegalStateException("Company is required for BUSINESS account");
+        }
+
+        if (accountOwnershipType == AccountOwnershipType.PERSONAL && this.getCompany() != null) {
+            throw new IllegalStateException("Company must be null for PERSONAL account");
+        }
     }
 
-
-    @Override
     public void setCurrency(Currency currency) {
-        if(currency == Currency.RSD)
-            throw new IllegalArgumentException("Ne sme RSD");
+        if(currency.getOznaka()== CurrencyCode.RSD)
+            throw new IllegalArgumentException("Ne moze RSD");
         super.setCurrency(currency);
     }
 }

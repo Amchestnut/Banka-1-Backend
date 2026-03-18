@@ -1,5 +1,12 @@
 package com.banka1.account_service.domain.enums;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@AllArgsConstructor
+@Getter
 public enum AccountOwnershipType {
-    PERSONAL,BUSINESS
+    PERSONAL(21),BUSINESS(22);
+    private final int val;
+
 }

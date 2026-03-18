@@ -1,8 +1,8 @@
 package com.banka1.account_service.domain;
 
-import com.banka1.account_service.domain.enums.AccountConcrete;
-import com.banka1.account_service.domain.enums.AccountStatus;
-import com.banka1.account_service.domain.enums.Currency;
+import com.banka1.account_service.domain.enums.AccountOwnershipType;
+import com.banka1.account_service.domain.enums.Status;
+import com.banka1.account_service.domain.enums.CurrencyCode;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -43,12 +43,12 @@ public abstract class Account extends BaseEntity{
     @Column(nullable = false,updatable = false)
     private LocalDateTime datumIVremeKreiranja;
     private LocalDate datumIsteka;
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
+    @JoinColumn(name = "currency_id", nullable = false)
     private Currency currency;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private AccountStatus status;
+    private Status status=Status.ACTIVE;
     @Column(nullable = false)
     private BigDecimal dnevniLimit;
     @Column(nullable = false)
@@ -57,20 +57,9 @@ public abstract class Account extends BaseEntity{
     private BigDecimal dnevnaPotrosnja=BigDecimal.ZERO;
     @Column(nullable = false)
     private BigDecimal mesecnaPotrosnja=BigDecimal.ZERO;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
 
-    public Account(String brojRacuna, String nazivRacuna, Long vlasnik, BigDecimal stanje, BigDecimal raspolozivoStanje, Long zaposleni, LocalDateTime datumIVremeKreiranja, LocalDate datumIsteka, AccountStatus status, BigDecimal dnevniLimit, BigDecimal mesecniLimit, BigDecimal dnevnaPotrosnja, BigDecimal mesecnaPotrosnja) {
-        this.brojRacuna = brojRacuna;
-        this.nazivRacuna = nazivRacuna;
-        this.vlasnik = vlasnik;
-        this.stanje = stanje;
-        this.raspolozivoStanje = raspolozivoStanje;
-        this.zaposleni = zaposleni;
-        this.datumIVremeKreiranja = datumIVremeKreiranja;
-        this.datumIsteka = datumIsteka;
-        this.status = status;
-        this.dnevniLimit = dnevniLimit;
-        this.mesecniLimit = mesecniLimit;
-        this.dnevnaPotrosnja = dnevnaPotrosnja;
-        this.mesecnaPotrosnja = mesecnaPotrosnja;
-    }
+
 }

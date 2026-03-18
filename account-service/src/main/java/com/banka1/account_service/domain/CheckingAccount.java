@@ -1,8 +1,9 @@
 package com.banka1.account_service.domain;
 
 import com.banka1.account_service.domain.enums.AccountConcrete;
-import com.banka1.account_service.domain.enums.AccountStatus;
-import com.banka1.account_service.domain.enums.Currency;
+import com.banka1.account_service.domain.enums.AccountOwnershipType;
+import com.banka1.account_service.domain.enums.Status;
+import com.banka1.account_service.domain.enums.CurrencyCode;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,9 +25,27 @@ public class CheckingAccount extends Account{
     private AccountConcrete accountConcrete;
     private BigDecimal odrzavanjeRacuna= BigDecimal.ZERO;
 
-    public CheckingAccount(String brojRacuna, String nazivRacuna, Long vlasnik, BigDecimal stanje, BigDecimal raspolozivoStanje, Long zaposleni, LocalDateTime datumIVremeKreiranja, LocalDate datumIsteka, Currency currency, AccountStatus status, BigDecimal dnevniLimit, BigDecimal mesecniLimit, BigDecimal dnevnaPotrosnja, BigDecimal mesecnaPotrosnja, AccountConcrete accountConcrete, BigDecimal odrzavanjeRacuna) {
-        super(brojRacuna, nazivRacuna, vlasnik, stanje, raspolozivoStanje, zaposleni, datumIVremeKreiranja, datumIsteka, currency, status, dnevniLimit, mesecniLimit, dnevnaPotrosnja, mesecnaPotrosnja);
+
+    public CheckingAccount(AccountConcrete accountConcrete) {
         this.accountConcrete = accountConcrete;
-        this.odrzavanjeRacuna = odrzavanjeRacuna;
+    }
+
+    @PrePersist
+    @PreUpdate
+    private void validate() {
+        if (accountConcrete.getAccountOwnershipType() == AccountOwnershipType.BUSINESS && this.getCompany() == null) {
+            throw new IllegalStateException("Company is required for BUSINESS account");
+        }
+
+        if (accountConcrete.getAccountOwnershipType() == AccountOwnershipType.PERSONAL && this.getCompany() != null) {
+            throw new IllegalStateException("Company must be null for PERSONAL account");
+        }
+    }
+
+    @Override
+    public void setCurrency(Currency currency) {
+        if(currency.getOznaka()!=CurrencyCode.RSD)
+            throw new IllegalArgumentException("Mora RSD");
+        super.setCurrency(currency);
     }
 }

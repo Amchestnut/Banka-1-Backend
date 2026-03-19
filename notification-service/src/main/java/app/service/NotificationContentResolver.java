@@ -3,7 +3,6 @@ package app.service;
 import app.dto.EmailTemplate;
 import app.dto.NotificationRequest;
 import app.dto.ResolvedEmail;
-import app.entities.NotificationType;
 import app.exception.BusinessException;
 import app.exception.ErrorCode;
 import app.template.NotificationTemplateFactory;
@@ -53,7 +52,7 @@ final class NotificationContentResolver {
      */
     static ResolvedEmail resolve(
             NotificationRequest request,
-            NotificationType notificationType,
+            String notificationType,
             NotificationTemplateFactory templateFactory
     ) {
         validateRequest(request);
@@ -143,8 +142,8 @@ final class NotificationContentResolver {
      *
      * @param notificationType notification type to validate
      */
-    private static void requireNotificationType(NotificationType notificationType) {
-        if (notificationType == null) {
+    private static void requireNotificationType(String notificationType) {
+        if (notificationType == null || notificationType.isBlank()) {
             throw new BusinessException(ErrorCode.NOTIFICATION_TYPE_REQUIRED, NOTIFICATION_TYPE_REQUIRED);
         }
     }

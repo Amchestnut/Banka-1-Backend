@@ -63,9 +63,8 @@ public class NotificationDelivery {
     /**
      * Event type resolved from RabbitMQ routing key.
      */
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private NotificationType notificationType;
+    private String notificationType;
 
     /**
      * Number of failed attempts already performed.

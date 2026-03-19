@@ -3,7 +3,7 @@ package app.service;
 import app.dto.EmailTemplate;
 import app.dto.NotificationRequest;
 import app.dto.ResolvedEmail;
-import app.entities.NotificationType;
+
 import app.exception.BusinessException;
 import app.exception.ErrorCode;
 import app.template.NotificationTemplateFactory;
@@ -55,7 +55,7 @@ class NotificationContentResolverUnitTest {
     @Test
     void resolveThrowsWhenRequestIsNull() {
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> NotificationContentResolver.resolve(null, NotificationType.EMPLOYEE_CREATED, templateFactory));
+                () -> NotificationContentResolver.resolve(null, "EMPLOYEE_CREATED", templateFactory));
         assertEquals(ErrorCode.NOTIFICATION_PAYLOAD_REQUIRED, exception.getErrorCode());
     }
 
@@ -68,7 +68,7 @@ class NotificationContentResolverUnitTest {
     void resolveThrowsWhenEmailIsNull() {
         NotificationRequest request = new NotificationRequest("Alice", null, Map.of());
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> NotificationContentResolver.resolve(request, NotificationType.EMPLOYEE_CREATED, templateFactory));
+                () -> NotificationContentResolver.resolve(request, "EMPLOYEE_CREATED", templateFactory));
         assertEquals(ErrorCode.RECIPIENT_EMAIL_REQUIRED, exception.getErrorCode());
     }
 
@@ -82,7 +82,7 @@ class NotificationContentResolverUnitTest {
     void resolveThrowsWhenEmailIsBlank() {
         NotificationRequest request = new NotificationRequest("Alice", "   ", Map.of());
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> NotificationContentResolver.resolve(request, NotificationType.EMPLOYEE_CREATED, templateFactory));
+                () -> NotificationContentResolver.resolve(request, "EMPLOYEE_CREATED", templateFactory));
         assertEquals(ErrorCode.RECIPIENT_EMAIL_REQUIRED, exception.getErrorCode());
     }
 
@@ -114,7 +114,7 @@ class NotificationContentResolverUnitTest {
                 "Alice", "alice@example.com", Map.of("name", "Alice")
         );
         ResolvedEmail resolved = NotificationContentResolver.resolve(
-                request, NotificationType.EMPLOYEE_CREATED, templateFactory
+                request, "EMPLOYEE_CREATED", templateFactory
         );
 
         assertEquals("alice@example.com", resolved.recipientEmail());
@@ -133,7 +133,7 @@ class NotificationContentResolverUnitTest {
     void resolveUsesUsernameAsNameFallbackWhenNameNotInTemplateVariables() {
         NotificationRequest request = new NotificationRequest("Bob", "bob@example.com", new HashMap<>());
         ResolvedEmail resolved = NotificationContentResolver.resolve(
-                request, NotificationType.EMPLOYEE_CREATED, templateFactory
+                request, "EMPLOYEE_CREATED", templateFactory
         );
 
         assertEquals("Hello Bob", resolved.body());
@@ -151,7 +151,7 @@ class NotificationContentResolverUnitTest {
                 "Bob", "bob@example.com", Map.of("name", "Robert")
         );
         ResolvedEmail resolved = NotificationContentResolver.resolve(
-                request, NotificationType.EMPLOYEE_CREATED, templateFactory
+                request, "EMPLOYEE_CREATED", templateFactory
         );
 
         assertEquals("Hello Robert", resolved.body());
@@ -166,7 +166,7 @@ class NotificationContentResolverUnitTest {
     void resolveHandlesNullTemplateVariablesInRequest() {
         NotificationRequest request = new NotificationRequest("Alice", "alice@example.com", null);
         ResolvedEmail resolved = NotificationContentResolver.resolve(
-                request, NotificationType.EMPLOYEE_CREATED, templateFactory
+                request, "EMPLOYEE_CREATED", templateFactory
         );
 
         assertEquals("Hello Alice", resolved.body());
@@ -182,7 +182,7 @@ class NotificationContentResolverUnitTest {
     void resolveWithWhitespaceOnlyUsernameAndNoNameVariableLeavesPlaceholderUnreplaced() {
         NotificationRequest request = new NotificationRequest("   ", "alice@example.com", new HashMap<>());
         ResolvedEmail resolved = NotificationContentResolver.resolve(
-                request, NotificationType.EMPLOYEE_CREATED, templateFactory
+                request, "EMPLOYEE_CREATED", templateFactory
         );
 
         assertEquals("Hello {{name}}", resolved.body());
@@ -203,7 +203,7 @@ class NotificationContentResolverUnitTest {
                 Map.of("name", "<script>alert('xss')</script>")
         );
         ResolvedEmail resolved = NotificationContentResolver.resolve(
-                request, NotificationType.EMPLOYEE_CREATED, templateFactory
+                request, "EMPLOYEE_CREATED", templateFactory
         );
 
         assertFalse(resolved.body().contains("<script>"));
@@ -221,7 +221,7 @@ class NotificationContentResolverUnitTest {
                 "AT&T", "user@example.com", new HashMap<>()
         );
         ResolvedEmail resolved = NotificationContentResolver.resolve(
-                request, NotificationType.EMPLOYEE_CREATED, templateFactory
+                request, "EMPLOYEE_CREATED", templateFactory
         );
 
         assertTrue(resolved.body().contains("AT&amp;T"));
@@ -239,7 +239,7 @@ class NotificationContentResolverUnitTest {
                 "Alice", "alice@example.com", Map.of("name", "\"Alice\"")
         );
         ResolvedEmail resolved = NotificationContentResolver.resolve(
-                request, NotificationType.EMPLOYEE_CREATED, templateFactory
+                request, "EMPLOYEE_CREATED", templateFactory
         );
 
         assertTrue(resolved.body().contains("&quot;Alice&quot;"));
@@ -257,7 +257,7 @@ class NotificationContentResolverUnitTest {
                 "Alice", "alice@example.com", Map.of("name", "O'Brien")
         );
         ResolvedEmail resolved = NotificationContentResolver.resolve(
-                request, NotificationType.EMPLOYEE_CREATED, templateFactory
+                request, "EMPLOYEE_CREATED", templateFactory
         );
 
         assertTrue(resolved.body().contains("O&#39;Brien"));
@@ -275,7 +275,7 @@ class NotificationContentResolverUnitTest {
                 "Alice", "alice@example.com", Map.of("name", "a>b")
         );
         ResolvedEmail resolved = NotificationContentResolver.resolve(
-                request, NotificationType.EMPLOYEE_CREATED, templateFactory
+                request, "EMPLOYEE_CREATED", templateFactory
         );
 
         assertTrue(resolved.body().contains("a&gt;b"));

@@ -1,7 +1,6 @@
 package app.config;
 
 import app.dto.EmailTemplate;
-import app.entities.NotificationType;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -20,5 +19,5 @@ import java.util.Map;
 public class NotificationProperties {
 
     private Map<String, EmailTemplate> templates;
-    private Map<String, NotificationType> routingKeys;
+    private Map<String, String> routingKeys;
 }

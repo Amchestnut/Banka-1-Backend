@@ -3,7 +3,7 @@ package app.service;
 import app.dto.NotificationRequest;
 import app.dto.ResolvedEmail;
 import app.dto.EmailTemplate;
-import app.entities.NotificationType;
+
 import app.exception.BusinessException;
 import app.exception.ErrorCode;
 import app.template.NotificationTemplateFactory;
@@ -89,7 +89,7 @@ class NotificationServiceUnitTest {
                 TEST_EMAIL,
                 Map.of("name", "Dimitrije", "resetLink", "https://example.com/reset/123")
         );
-        when(templateFactory.resolve(NotificationType.EMPLOYEE_PASSWORD_RESET)).thenReturn(
+        when(templateFactory.resolve("EMPLOYEE_PASSWORD_RESET")).thenReturn(
                 new EmailTemplate(
                         "Password Reset Email",
                         "Zdravo {{name}}, resetujte lozinku klikom na link:\n{{resetLink}}"
@@ -98,7 +98,7 @@ class NotificationServiceUnitTest {
 
         ResolvedEmail resolved = notificationService.resolveEmailContent(
                 request,
-                NotificationType.EMPLOYEE_PASSWORD_RESET
+                "EMPLOYEE_PASSWORD_RESET"
         );
 
         assertEquals(TEST_EMAIL, resolved.recipientEmail());
@@ -117,7 +117,7 @@ class NotificationServiceUnitTest {
 
         BusinessException exception = assertThrows(
                 BusinessException.class,
-                () -> notificationService.resolveEmailContent(request, NotificationType.EMPLOYEE_CREATED)
+                () -> notificationService.resolveEmailContent(request, "EMPLOYEE_CREATED")
         );
         assertEquals(ErrorCode.RECIPIENT_EMAIL_REQUIRED, exception.getErrorCode());
     }
@@ -134,7 +134,7 @@ class NotificationServiceUnitTest {
 
         BusinessException exception = assertThrows(
                 BusinessException.class,
-                () -> notificationService.resolveEmailContent(request, NotificationType.EMPLOYEE_CREATED)
+                () -> notificationService.resolveEmailContent(request, "EMPLOYEE_CREATED")
         );
         assertEquals(ErrorCode.RECIPIENT_EMAIL_REQUIRED, exception.getErrorCode());
     }

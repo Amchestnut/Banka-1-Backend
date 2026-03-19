@@ -3,7 +3,7 @@ package app.service;
 import app.dto.EmailTemplate;
 import app.dto.NotificationRequest;
 import app.dto.ResolvedEmail;
-import app.entities.NotificationType;
+
 import app.template.NotificationTemplateFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -63,9 +63,9 @@ class NotificationServiceTest {
     void resolveEmailContentDelegatesToResolver() {
         NotificationRequest request = new NotificationRequest("name", "email", Map.of());
         EmailTemplate template = new EmailTemplate("Subject", "Body");
-        when(templateFactory.resolve(NotificationType.EMPLOYEE_CREATED)).thenReturn(template);
+        when(templateFactory.resolve("EMPLOYEE_CREATED")).thenReturn(template);
 
-        ResolvedEmail result = notificationService.resolveEmailContent(request, NotificationType.EMPLOYEE_CREATED);
+        ResolvedEmail result = notificationService.resolveEmailContent(request, "EMPLOYEE_CREATED");
 
         assertEquals("email", result.recipientEmail());
         assertEquals("Subject", result.subject());

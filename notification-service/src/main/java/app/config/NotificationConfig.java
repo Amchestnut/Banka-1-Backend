@@ -1,8 +1,6 @@
 package app.config;
 
 import app.dto.EmailTemplate;
-import app.entities.NotificationType;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -25,7 +23,7 @@ public class NotificationConfig {
     }
 
     @Bean
-    public Map<String, NotificationType> routingKeys(NotificationProperties properties) {
+    public Map<String, String> routingKeys(NotificationProperties properties) {
         return properties.getRoutingKeys();
     }
 }

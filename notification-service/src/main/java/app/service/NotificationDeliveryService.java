@@ -5,7 +5,6 @@ import app.dto.ResolvedEmail;
 import app.dto.RetryTask;
 import app.entities.NotificationDelivery;
 import app.entities.NotificationDeliveryStatus;
-import app.entities.NotificationType;
 import app.exception.BusinessException;
 import app.exception.ErrorCode;
 import jakarta.annotation.PostConstruct;
@@ -79,7 +78,7 @@ public class NotificationDeliveryService {
     /**
      * Configured routing keys map.
      */
-    private final Map<String, NotificationType> routingKeysMap;
+    private final Map<String, String> routingKeysMap;
 
     /**
      * Spring environment for property access.
@@ -137,35 +136,18 @@ public class NotificationDeliveryService {
      */
     @Transactional
     public void handleIncomingMessage(NotificationRequest req, String routingKey) {
-        Optional<NotificationType> notificationType = resolveNotificationType(routingKey);
+        Optional<String> notificationType = resolveNotificationType(routingKey);
         if (notificationType.isEmpty()) {
             notificationDeliveryTxService.persistFailedAudit(
                     buildFailedAudit(
                             req,
-                            NotificationType.UNKNOWN,
+                            "UNKNOWN",
                             "Unsupported routing key: " + routingKey
                     )
             );
             return;
         }
         processIncomingMessage(req, notificationType.get());
-    }
-
-    /**
-     * Handles a consumed RabbitMQ message after the notification type is known.
-     *
-     * <p>Ova varijanta se uglavnom koristi interno i u testovima kada je tip notifikacije
-     * vec poznat i ne mora ponovo da se radi mapiranje iz routing key-a.
-     *
-     * @param req incoming notification payload
-     * @param notificationType type resolved from the RabbitMQ routing key
-     */
-    @Transactional
-    void handleIncomingMessage(
-            NotificationRequest req,
-            NotificationType notificationType
-    ) {
-        processIncomingMessage(req, notificationType);
     }
 
     /**
@@ -191,7 +173,7 @@ public class NotificationDeliveryService {
      */
     private void processIncomingMessage(
             NotificationRequest req,
-            NotificationType notificationType
+            String notificationType
     ) {
         validateIncoming(req);
         validateNotificationType(notificationType);
@@ -267,7 +249,7 @@ public class NotificationDeliveryService {
     private NotificationDelivery buildPendingDelivery(
             String deliveryId,
             ResolvedEmail resolvedEmail,
-            NotificationType notificationType
+            String notificationType
     ) {
         NotificationDelivery delivery = new NotificationDelivery();
         delivery.setDeliveryId(deliveryId);
@@ -295,7 +277,7 @@ public class NotificationDeliveryService {
      */
     private NotificationDelivery buildFailedAudit(
             NotificationRequest request,
-            NotificationType notificationType,
+            String notificationType,
             String error
     ) {
         NotificationDelivery delivery = new NotificationDelivery();
@@ -481,7 +463,7 @@ public class NotificationDeliveryService {
         });
     }
 
-    private Optional<NotificationType> resolveNotificationType(String routingKey) {
+    private Optional<String> resolveNotificationType(String routingKey) {
         return Optional.ofNullable(routingKeysMap.get(routingKey));
     }
 
@@ -509,8 +491,8 @@ public class NotificationDeliveryService {
      * @param notificationType resolved notification type
      * @throws BusinessException if notificationType is null
      */
-    private void validateNotificationType(NotificationType notificationType) {
-        if (notificationType == null) {
+    private void validateNotificationType(String notificationType) {
+        if (notificationType == null || notificationType.isBlank()) {
             throw new BusinessException(ErrorCode.NOTIFICATION_TYPE_REQUIRED, "notificationType is required");
         }
     }
@@ -550,8 +532,8 @@ public class NotificationDeliveryService {
      * @param notificationType candidate notification type
      * @return original type or {@link NotificationType#UNKNOWN} when absent
      */
-    private NotificationType normalizeNotificationType(NotificationType notificationType) {
-        return notificationType == null ? NotificationType.UNKNOWN : notificationType;
+    private String normalizeNotificationType(String notificationType) {
+        return notificationType == null ? "UNKNOWN" : notificationType;
     }
 
     /**

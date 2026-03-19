@@ -1,7 +1,6 @@
 package app.template;
 
 import app.dto.EmailTemplate;
-import app.entities.NotificationType;
 import app.exception.BusinessException;
 import app.exception.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,7 +51,7 @@ class DefaultNotificationTemplateFactoryUnitTest {
      */
     @Test
     void resolveEmployeeCreatedReturnsActivationTemplate() {
-        EmailTemplate template = factory.resolve(NotificationType.EMPLOYEE_CREATED);
+        EmailTemplate template = factory.resolve("EMPLOYEE_CREATED");
 
         assertEquals("Activation Email", template.subject());
         assertTrue(template.bodyTemplate().contains("{{activationLink}}"));
@@ -67,7 +66,7 @@ class DefaultNotificationTemplateFactoryUnitTest {
      */
     @Test
     void resolveEmployeePasswordResetReturnsResetTemplate() {
-        EmailTemplate template = factory.resolve(NotificationType.EMPLOYEE_PASSWORD_RESET);
+        EmailTemplate template = factory.resolve("EMPLOYEE_PASSWORD_RESET");
 
         assertEquals("Password Reset Email", template.subject());
         assertTrue(template.bodyTemplate().contains("{{resetLink}}"));
@@ -82,7 +81,7 @@ class DefaultNotificationTemplateFactoryUnitTest {
      */
     @Test
     void resolveEmployeeAccountDeactivatedReturnsDeactivationTemplate() {
-        EmailTemplate template = factory.resolve(NotificationType.EMPLOYEE_ACCOUNT_DEACTIVATED);
+        EmailTemplate template = factory.resolve("EMPLOYEE_ACCOUNT_DEACTIVATED");
 
         assertEquals("Account Deactivation Email", template.subject());
         assertTrue(template.bodyTemplate().contains("{{name}}"));
@@ -98,7 +97,7 @@ class DefaultNotificationTemplateFactoryUnitTest {
     void resolveUnknownNotificationTypeThrows() {
         BusinessException ex = assertThrows(
                 BusinessException.class,
-                () -> factory.resolve(NotificationType.UNKNOWN)
+                () -> factory.resolve("UNKNOWN")
         );
         assertEquals(ErrorCode.EMAIL_CONTENT_RESOLUTION_FAILED, ex.getErrorCode());
         assertTrue(ex.getDetails().contains("UNKNOWN"));
@@ -112,9 +111,9 @@ class DefaultNotificationTemplateFactoryUnitTest {
      */
     @Test
     void allSupportedTypesReturnDistinctSubjects() {
-        EmailTemplate created = factory.resolve(NotificationType.EMPLOYEE_CREATED);
-        EmailTemplate reset = factory.resolve(NotificationType.EMPLOYEE_PASSWORD_RESET);
-        EmailTemplate deactivated = factory.resolve(NotificationType.EMPLOYEE_ACCOUNT_DEACTIVATED);
+        EmailTemplate created = factory.resolve("EMPLOYEE_CREATED");
+        EmailTemplate reset = factory.resolve("EMPLOYEE_PASSWORD_RESET");
+        EmailTemplate deactivated = factory.resolve("EMPLOYEE_ACCOUNT_DEACTIVATED");
 
         assertNotEquals(created.subject(), reset.subject());
         assertNotEquals(created.subject(), deactivated.subject());

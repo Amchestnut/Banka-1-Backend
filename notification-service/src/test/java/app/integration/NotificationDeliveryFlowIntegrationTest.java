@@ -3,7 +3,7 @@ package app.integration;
 import app.dto.NotificationRequest;
 import app.entities.NotificationDelivery;
 import app.entities.NotificationDeliveryStatus;
-import app.entities.NotificationType;
+
 import app.entities.RoutingKeys;
 import app.repository.NotificationDeliveryRepository;
 import app.service.NotificationDeliveryService;
@@ -103,7 +103,7 @@ class NotificationDeliveryFlowIntegrationTest {
         NotificationDelivery delivery = waitForSucceededDelivery();
         SimpleMailMessage sentMessage = recordingMailSender.singleSentMessage();
 
-        assertEquals(NotificationType.EMPLOYEE_CREATED, delivery.getNotificationType());
+        assertEquals("EMPLOYEE_CREATED", delivery.getNotificationType());
         assertEquals(TEST_EMAIL, delivery.getRecipientEmail());
         assertEquals("Activation Email", delivery.getSubject());
         assertEquals(
@@ -151,7 +151,7 @@ class NotificationDeliveryFlowIntegrationTest {
         NotificationDelivery delivery = waitForSucceededDelivery();
         SimpleMailMessage sentMessage = recordingMailSender.singleSentMessage();
 
-        assertEquals(NotificationType.EMPLOYEE_PASSWORD_RESET, delivery.getNotificationType());
+        assertEquals("EMPLOYEE_PASSWORD_RESET", delivery.getNotificationType());
         assertEquals(TEST_EMAIL, delivery.getRecipientEmail());
         assertEquals("Password Reset Email", delivery.getSubject());
         assertEquals(
@@ -195,7 +195,7 @@ class NotificationDeliveryFlowIntegrationTest {
         NotificationDelivery delivery = waitForSucceededDelivery();
         SimpleMailMessage sentMessage = recordingMailSender.singleSentMessage();
 
-        assertEquals(NotificationType.EMPLOYEE_ACCOUNT_DEACTIVATED, delivery.getNotificationType());
+        assertEquals("EMPLOYEE_ACCOUNT_DEACTIVATED", delivery.getNotificationType());
         assertEquals(TEST_EMAIL, delivery.getRecipientEmail());
         assertEquals("Account Deactivation Email", delivery.getSubject());
         assertEquals("Zdravo Andrija, vas nalog je deaktiviran.", delivery.getBody());

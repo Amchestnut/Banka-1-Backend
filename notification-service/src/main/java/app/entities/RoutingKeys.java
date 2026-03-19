@@ -17,6 +17,18 @@ public final class RoutingKeys {
      * Routing key za deaktivaciju naloga zaposlenog.
      */
     public static final String EMPLOYEE_ACCOUNT_DEACTIVATED = "employee.account_deactivated";
+    /**
+     * Routing key za kreiranje klijenta.
+     */
+    public static final String CLIENT_CREATED = "client.created";
+    /**
+     * Routing key za reset lozinke klijenta.
+     */
+    public static final String CLIENT_PASSWORD_RESET = "client.password_reset";
+    /**
+     * Routing key za deaktivaciju naloga klijenta.
+     */
+    public static final String CLIENT_ACCOUNT_DEACTIVATED = "client.account_deactivated";
 
     private RoutingKeys() {}
 }

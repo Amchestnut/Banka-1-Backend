@@ -5,7 +5,7 @@ import app.dto.ResolvedEmail;
 import app.dto.RetryTask;
 import app.entities.NotificationDelivery;
 import app.entities.NotificationDeliveryStatus;
-import app.entities.NotificationType;
+
 import app.exception.BusinessException;
 import app.exception.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,7 +73,7 @@ class NotificationDeliveryServiceUnitTest {
     private RetryTaskQueue retryTaskQueue;
 
     @Mock
-    private Map<String, NotificationType> routingKeysMap;
+    private Map<String, String> routingKeysMap;
 
     @InjectMocks
     private NotificationDeliveryService notificationDeliveryService;
@@ -184,13 +184,14 @@ class NotificationDeliveryServiceUnitTest {
     @Test
     void handleIncomingMessageMarksDeliveryFailedWithoutRetryOnMailAuthenticationException() {
         NotificationRequest request = new NotificationRequest("Dimitrije", TEST_EMAIL, Map.of());
-        when(notificationService.resolveEmailContent(request, NotificationType.EMPLOYEE_CREATED))
+        when(routingKeysMap.get("EMPLOYEE_CREATED")).thenReturn("EMPLOYEE_CREATED");
+        when(notificationService.resolveEmailContent(request, "EMPLOYEE_CREATED"))
                 .thenReturn(new ResolvedEmail(TEST_EMAIL, "Hello", "Body"));
         doThrow(new MailAuthenticationException("Authentication failed"))
                 .when(notificationService).sendEmail(TEST_EMAIL, "Hello", "Body");
 
         runHandleIncomingMessageAndCommit(
-                () -> notificationDeliveryService.handleIncomingMessage(request, NotificationType.EMPLOYEE_CREATED)
+                () -> notificationDeliveryService.handleIncomingMessage(request, "EMPLOYEE_CREATED")
         );
 
         ArgumentCaptor<NotificationDelivery> deliveryCaptor = ArgumentCaptor.forClass(NotificationDelivery.class);
@@ -212,8 +213,9 @@ class NotificationDeliveryServiceUnitTest {
      */
     @Test
     void handleIncomingMessagePersistsFailedAuditWhenPayloadIsInvalid() {
+        when(routingKeysMap.get("EMPLOYEE_CREATED")).thenReturn("EMPLOYEE_CREATED");
         assertThrows(BusinessException.class, () ->
-                notificationDeliveryService.handleIncomingMessage(null, NotificationType.EMPLOYEE_CREATED)
+                notificationDeliveryService.handleIncomingMessage(null, "EMPLOYEE_CREATED")
         );
 
         verify(notificationDeliveryTxService, never()).persistFailedAudit(any());
@@ -236,7 +238,7 @@ class NotificationDeliveryServiceUnitTest {
         NotificationDelivery saved = deliveryCaptor.getValue();
 
         assertEquals(NotificationDeliveryStatus.FAILED, saved.getStatus());
-        assertEquals(NotificationType.UNKNOWN, saved.getNotificationType());
+        assertEquals("UNKNOWN", saved.getNotificationType());
         assertEquals(TEST_EMAIL, saved.getRecipientEmail());
         assertEquals("Unsupported routing key: employee.unknown", saved.getLastError());
         verify(notificationService, never()).sendEmail(any(), any(), any());
@@ -261,8 +263,8 @@ class NotificationDeliveryServiceUnitTest {
                 Map.of("resetLink", "https://example.com/reset/123")
         );
         when(routingKeysMap.get("employee.password_reset"))
-                .thenReturn(NotificationType.EMPLOYEE_PASSWORD_RESET);
-        when(notificationService.resolveEmailContent(request, NotificationType.EMPLOYEE_PASSWORD_RESET))
+                .thenReturn("EMPLOYEE_PASSWORD_RESET");
+        when(notificationService.resolveEmailContent(request, "EMPLOYEE_PASSWORD_RESET"))
                 .thenReturn(new ResolvedEmail(TEST_EMAIL, "Password Reset Email", "Body"));
 
         runHandleIncomingMessageInTransaction(
@@ -270,7 +272,7 @@ class NotificationDeliveryServiceUnitTest {
         );
 
         verify(notificationDeliveryTxService, never()).persistFailedAudit(any());
-        verify(notificationService).resolveEmailContent(request, NotificationType.EMPLOYEE_PASSWORD_RESET);
+        verify(notificationService).resolveEmailContent(request, "EMPLOYEE_PASSWORD_RESET");
         verify(notificationDeliveryTxService).createPendingDelivery(any(NotificationDelivery.class));
     }
 
@@ -290,7 +292,7 @@ class NotificationDeliveryServiceUnitTest {
         delivery.setSubject("Hello");
         delivery.setBody("Body");
         delivery.setStatus(NotificationDeliveryStatus.RETRY_SCHEDULED);
-        delivery.setNotificationType(NotificationType.EMPLOYEE_CREATED);
+        delivery.setNotificationType("EMPLOYEE_CREATED");
         delivery.setRetryCount(1);
         delivery.setMaxRetries(4);
         delivery.setNextAttemptAt(now.minusSeconds(1));
@@ -339,7 +341,7 @@ class NotificationDeliveryServiceUnitTest {
         delivery.setSubject("Hello");
         delivery.setBody("Body");
         delivery.setStatus(NotificationDeliveryStatus.RETRY_SCHEDULED);
-        delivery.setNotificationType(NotificationType.EMPLOYEE_CREATED);
+        delivery.setNotificationType("EMPLOYEE_CREATED");
         delivery.setRetryCount(1);
         delivery.setMaxRetries(4);
         delivery.setNextAttemptAt(now.plusSeconds(60));
@@ -371,7 +373,7 @@ class NotificationDeliveryServiceUnitTest {
         delivery.setSubject("Hello");
         delivery.setBody("Body");
         delivery.setStatus(NotificationDeliveryStatus.RETRY_SCHEDULED);
-        delivery.setNotificationType(NotificationType.EMPLOYEE_CREATED);
+        delivery.setNotificationType("EMPLOYEE_CREATED");
         delivery.setRetryCount(3);
         delivery.setMaxRetries(4);
         delivery.setNextAttemptAt(now.minusSeconds(1));
@@ -471,7 +473,7 @@ class NotificationDeliveryServiceUnitTest {
         NotificationDelivery saved = captor.getValue();
 
         assertEquals(NotificationDeliveryStatus.FAILED, saved.getStatus());
-        assertEquals(NotificationType.UNKNOWN, saved.getNotificationType());
+        assertEquals("UNKNOWN", saved.getNotificationType());
         verify(notificationService, never()).sendEmail(any(), any(), any());
     }
 
@@ -484,12 +486,13 @@ class NotificationDeliveryServiceUnitTest {
     @Test
     void handleIncomingMessagePersistsFailedAuditWhenContentResolutionThrows() {
         NotificationRequest request = new NotificationRequest("Dimitrije", TEST_EMAIL, Map.of());
-        when(notificationService.resolveEmailContent(request, NotificationType.EMPLOYEE_CREATED))
+        when(routingKeysMap.get("EMPLOYEE_CREATED")).thenReturn("EMPLOYEE_CREATED");
+        when(notificationService.resolveEmailContent(request, "EMPLOYEE_CREATED"))
                 .thenThrow(new BusinessException(ErrorCode.EMAIL_CONTENT_RESOLUTION_FAILED, "template error"));
 
         assertThrows(BusinessException.class, () ->
                 runHandleIncomingMessageInTransaction(
-                        () -> notificationDeliveryService.handleIncomingMessage(request, NotificationType.EMPLOYEE_CREATED)
+                        () -> notificationDeliveryService.handleIncomingMessage(request, "EMPLOYEE_CREATED")
                 )
         );
 
@@ -591,7 +594,7 @@ class NotificationDeliveryServiceUnitTest {
         delivery.setSubject("Hello");
         delivery.setBody("Body");
         delivery.setStatus(NotificationDeliveryStatus.RETRY_SCHEDULED);
-        delivery.setNotificationType(NotificationType.EMPLOYEE_CREATED);
+        delivery.setNotificationType("EMPLOYEE_CREATED");
         delivery.setRetryCount(3);
         delivery.setMaxRetries(4);
         delivery.setNextAttemptAt(now.minusSeconds(1));

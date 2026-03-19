@@ -73,6 +73,10 @@ jobs:
         with:
           gradle-version: '8.14'
 
+      - name: Publish shared libraries to mavenLocal
+        run: |
+          gradle :security-lib:publishToMavenLocal :company-observability-starter:publishToMavenLocal --no-daemon --warning-mode none --console plain
+
       - name: Lint
         run: |
           SERVICE="${{ matrix.service }}"

@@ -34,12 +34,22 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @Transactional
 public class ClientServiceImplementation implements ClientService {
 
+    /** Repozitorijum za pristup podacima klijenata u bazi. */
     private final KlijentRepository klijentRepository;
+
+    /** Maper koji konvertuje entitete klijenata u DTO objekte i obratno. */
     private final ClientMapper clientMapper;
+
+    /** Klijent za slanje poruka putem RabbitMQ-a. */
     private final RabbitClient rabbitClient;
+
+    /** Repozitorijum za pristup confirmation tokenima klijenata. */
     private final ClientConfirmationTokenRepository confirmationTokenRepository;
+
+    /** Servis za generisanje i hesiranje tokena. */
     private final TokenService tokenService;
 
+    /** Bazni URL za aktivaciju naloga na koji se dodaje generisani token. */
     @org.springframework.beans.factory.annotation.Value("${url.activate-account}")
     private String urlActivateAccount;
 

@@ -15,7 +15,10 @@ import java.util.Base64;
 @Service
 public class TokenService {
 
+    /** Kriptografski siguran generator slucajnih brojeva. */
     private final SecureRandom random = new SecureRandom();
+
+    /** Bafer od 32 bajta koji se popunjava pri svakom generisanju tokena. */
     private final byte[] bytes = new byte[32];
 
     /**
@@ -45,6 +48,12 @@ public class TokenService {
         }
     }
 
+    /**
+     * Konvertuje niz bajtova u lowercase hex string.
+     *
+     * @param hashBytes niz bajtova koji se konvertuje
+     * @return hex reprezentacija bajtova
+     */
     private String toHex(byte[] hashBytes) {
         StringBuilder sb = new StringBuilder(hashBytes.length * 2);
         for (byte b : hashBytes) {

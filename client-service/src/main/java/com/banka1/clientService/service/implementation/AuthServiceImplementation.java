@@ -41,40 +41,64 @@ import java.util.Date;
 @Transactional
 public class AuthServiceImplementation implements AuthService {
 
+    /** Repozitorijum za pristup podacima klijenata u bazi. */
     private final KlijentRepository klijentRepository;
+
+    /** Enkoder lozinki koji koristi Argon2id algoritam. */
     private final PasswordEncoder passwordEncoder;
+
+    /** HMAC-SHA256 potpisnik koji se koristi za generisanje JWT tokena. */
     private final MACSigner signer;
 
+    /** Repozitorijum za pristup confirmation tokenima klijenata. */
     @Autowired
     private ClientConfirmationTokenRepository confirmationTokenRepository;
 
+    /** Servis za generisanje i hesiranje tokena. */
     @Autowired
     private TokenService tokenService;
 
+    /** Klijent za slanje poruka putem RabbitMQ-a. */
     @Autowired
     private RabbitClient rabbitClient;
 
+    /** Naziv claim-a u JWT tokenu koji sadrzi role korisnika. */
     @Value("${banka.security.roles-claim}")
     private String rolesClaim;
 
+    /** Naziv claim-a u JWT tokenu koji sadrzi identifikator korisnika. */
     @Value("${banka.security.id}")
     private String idClaim;
 
+    /** Naziv issuera koji se upisuje u JWT token. */
     @Value("${banka.security.issuer}")
     private String issuer;
 
+    /** Vreme vazenja JWT tokena u milisekundama. */
     @Value("${banka.security.expiration-time}")
     private Long expirationTime;
 
+    /** Bazni URL za aktivaciju naloga na koji se dodaje generisani token. */
     @Value("${url.activate-account}")
     private String urlActivateAccount;
 
+    /** Bazni URL za reset lozinke na koji se dodaje generisani token. */
     @Value("${url.reset-password}")
     private String urlResetPassword;
 
+    /** Vreme vazenja confirmation tokena u minutima. */
     @Value("${token.confirmation.expiration-time}")
     private Long confirmationTokenExpiration;
 
+    /**
+     * Kreira instancu servisa injektovanjem repozitorijuma, enkodera lozinki i JWT tajne.
+     * {@link MACSigner} se inicijalizuje ovde jer zahteva tajnu vrednost pri konstruisanju.
+     *
+     * @param klijentRepository repozitorijum klijenata
+     * @param passwordEncoder   enkoder lozinki
+     * @param secret            JWT tajna vrednost ocitana iz konfiguracije
+     * @throws KeyLengthException ako je tajna prekratka za HMAC-SHA256
+     */
     public AuthServiceImplementation(
             KlijentRepository klijentRepository,
             PasswordEncoder passwordEncoder,

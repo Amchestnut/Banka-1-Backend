@@ -3,6 +3,7 @@ package com.banka1.account_service.controller;
 import com.banka1.account_service.dto.request.*;
 import com.banka1.account_service.dto.response.*;
 import com.banka1.account_service.service.EmployeeService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -24,15 +25,18 @@ public class EmployeeController {
 
     private EmployeeService employeeService;
 
+    @Operation(summary = "Create checking account")
     @PostMapping("/accounts/checking")
     public ResponseEntity<String> createCheckingAccount(@AuthenticationPrincipal Jwt jwt,@RequestBody @Valid CheckingDto checkingDto) {
         return new ResponseEntity<>(employeeService.createCheckingAccount(jwt,checkingDto), HttpStatus.OK);
     }
+    @Operation(summary = "Create FX account")
     @PostMapping("/accounts/fx")
     public ResponseEntity<String> createFxAccount(@AuthenticationPrincipal Jwt jwt,@RequestBody @Valid FxDto fxDto) {
         return new ResponseEntity<>(employeeService.createFxAccount(jwt,fxDto), HttpStatus.OK);
     }
 
+    @Operation(summary = "Search all accounts")
     @GetMapping("/accounts")
     public ResponseEntity<Page<AccountSearchResponseDto>> searchAllAccounts(@AuthenticationPrincipal Jwt jwt,
                                                                             @RequestParam(required = false) String imeVlasnikaRacuna,
@@ -45,6 +49,7 @@ public class EmployeeController {
     }
 
 
+    @Operation(summary = "Update card status")
     @PutMapping("/cards/{id}")
     public ResponseEntity<String> updateCard(@AuthenticationPrincipal Jwt jwt,@PathVariable Long id,@RequestBody @Valid UpdateCardDto updateCardDto)
     {

@@ -11,6 +11,7 @@ paths:
     put:
       tags:
       - employee-controller
+      summary: Update card status
       operationId: updateCard
       parameters:
       - name: id
@@ -36,6 +37,7 @@ paths:
     post:
       tags:
       - employee-controller
+      summary: Create FX account
       operationId: createFxAccount
       requestBody:
         content:
@@ -54,6 +56,7 @@ paths:
     post:
       tags:
       - employee-controller
+      summary: Create checking account
       operationId: createCheckingAccount
       requestBody:
         content:
@@ -72,6 +75,7 @@ paths:
     post:
       tags:
       - client-controller
+      summary: Approve a transaction
       operationId: approveTransaction
       parameters:
       - name: id
@@ -97,6 +101,7 @@ paths:
     post:
       tags:
       - client-controller
+      summary: Create a new payment
       operationId: newPayment
       requestBody:
         content:
@@ -115,6 +120,7 @@ paths:
     patch:
       tags:
       - client-controller
+      summary: Edit account name
       operationId: editAccountName
       parameters:
       - name: id
@@ -140,6 +146,7 @@ paths:
     patch:
       tags:
       - client-controller
+      summary: Edit account transaction limit
       operationId: editAccountLimit
       parameters:
       - name: id
@@ -165,6 +172,7 @@ paths:
     get:
       tags:
       - employee-controller
+      summary: Search all accounts
       operationId: searchAllAccounts
       parameters:
       - name: imeVlasnikaRacuna
@@ -210,6 +218,7 @@ paths:
     get:
       tags:
       - client-controller
+      summary: Get my accounts
       operationId: findMyAccounts
       parameters:
       - name: page
@@ -240,6 +249,7 @@ paths:
     get:
       tags:
       - client-controller
+      summary: Get account details
       operationId: getDetails
       parameters:
       - name: id
@@ -259,6 +269,7 @@ paths:
     get:
       tags:
       - client-controller
+      summary: Get account transactions
       operationId: findAllTransactions
       parameters:
       - name: id
@@ -295,6 +306,7 @@ paths:
     get:
       tags:
       - client-controller
+      summary: Get account cards
       operationId: findAllCards
       parameters:
       - name: id

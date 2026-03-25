@@ -9,8 +9,14 @@ import com.banka1.account_service.dto.request.CheckingDto;
 import com.banka1.account_service.dto.request.FirmaDto;
 import com.banka1.account_service.dto.request.FxDto;
 import com.banka1.account_service.dto.request.UpdateCardDto;
+import com.banka1.account_service.dto.request.UpdateCompanyDto;
+import com.banka1.account_service.dto.response.AccountDetailsResponseDto;
 import com.banka1.account_service.dto.response.AccountSearchResponseDto;
+import com.banka1.account_service.dto.response.CardResponseDto;
 import com.banka1.account_service.dto.response.ClientInfoResponseDto;
+import com.banka1.account_service.dto.response.CompanyResponseDto;
+import com.banka1.account_service.rest_client.CardServiceRestClient;
+import com.banka1.account_service.util.AccountNumberGenerator;
 import com.banka1.account_service.rabbitMQ.CardEventDto;
 import com.banka1.account_service.rabbitMQ.CardEventType;
 import com.banka1.account_service.rabbitMQ.EmailDto;
@@ -49,8 +55,9 @@ public class EmployeeServiceImplementation implements EmployeeService {
     private final SifraDelatnostiRepository sifraDelatnostiRepository;
     private final CompanyRepository companyRepository;
     private final RabbitClient rabbitClient;
+    private final CardServiceRestClient cardServiceRestClient;
 
-    public EmployeeServiceImplementation(@Value("${my.random.seed}") Long seed, RestClientService restClientService, CurrencyRepository currencyRepository, SifraDelatnostiRepository sifraDelatnostiRepository, CompanyRepository companyRepository, AccountRepository accountRepository, RabbitClient rabbitClient)
+    public EmployeeServiceImplementation(@Value("${my.random.seed}") Long seed, RestClientService restClientService, CurrencyRepository currencyRepository, SifraDelatnostiRepository sifraDelatnostiRepository, CompanyRepository companyRepository, AccountRepository accountRepository, RabbitClient rabbitClient, CardServiceRestClient cardServiceRestClient)
     {
         this.restClientService = restClientService;
         this.rabbitClient = rabbitClient;
@@ -59,6 +66,7 @@ public class EmployeeServiceImplementation implements EmployeeService {
         this.sifraDelatnostiRepository=sifraDelatnostiRepository;
         this.companyRepository=companyRepository;
         this.accountRepository = accountRepository;
+        this.cardServiceRestClient = cardServiceRestClient;
     }
 
     private void validateFxDto(FxDto dto) {
@@ -123,33 +131,8 @@ public class EmployeeServiceImplementation implements EmployeeService {
     }
 
 
-    private int calculate(String s)
-    {
-        int sum=0;
-        for(char x:s.toCharArray())
-        {
-            sum+=x-'0';
-        }
-        return (11-sum%11)%11;
-    }
-
     private String generateAccountNumber(String typeVal) {
-        StringBuilder sb = new StringBuilder();
-        boolean exists=true;
-        String val="";
-        while (exists) {
-            sb.setLength(0);
-            for (int i = 0; i < 9; i++) {
-                sb.append(random.nextInt(10));
-            }
-            val="111"+"0001" + sb + typeVal;
-            int result=calculate(val);
-            if(result==10)
-                continue;
-            val+=result;
-            exists = accountRepository.existsByBrojRacuna(val);
-        }
-        return val;
+        return AccountNumberGenerator.generate(typeVal, random, accountRepository);
     }
 
     private void populateAccount(Account account,
@@ -179,10 +162,9 @@ public class EmployeeServiceImplementation implements EmployeeService {
         account.setDatumIsteka(LocalDate.now().plusYears(5));
     }
 
-    //todo rabit mq
     @Transactional
     @Override
-    public String createFxAccount(Jwt jwt, FxDto fxDto) {
+    public AccountDetailsResponseDto createFxAccount(Jwt jwt, FxDto fxDto) {
         validateFxDto(fxDto);
         Currency currency = getCurrencyOrThrow(fxDto.getCurrencyCode());
         Company company = createCompanyIfNeeded(fxDto.getFirma());
@@ -200,13 +182,12 @@ public class EmployeeServiceImplementation implements EmployeeService {
                 }
             }
         });
-        return "Uspesno kreiran fx account";
+        return new AccountDetailsResponseDto(account);
     }
 
-    //todo rabit mq
     @Transactional
     @Override
-    public String createCheckingAccount(Jwt jwt, CheckingDto checkingDto) {
+    public AccountDetailsResponseDto createCheckingAccount(Jwt jwt, CheckingDto checkingDto) {
         validateCheckingDto(checkingDto);
         Currency currency = getCurrencyOrThrow(CurrencyCode.RSD);
         Company company = createCompanyIfNeeded(checkingDto.getFirma());
@@ -224,7 +205,7 @@ public class EmployeeServiceImplementation implements EmployeeService {
                 }
             }
         });
-        return "Uspesno kreiran checking account";
+        return new AccountDetailsResponseDto(account);
     }
 
     private String myTrim(String s)
@@ -238,6 +219,71 @@ public class EmployeeServiceImplementation implements EmployeeService {
     public Page<AccountSearchResponseDto> searchAllAccounts(Jwt jwt,String ime,String prezime,String accountNumber,int page,int size)
     {
         return accountRepository.searchAccounts(myTrim(accountNumber),myTrim(ime),myTrim(prezime),PageRequest.of(page,size)).map(AccountSearchResponseDto::new);
+    }
+
+    @Override
+    public List<AccountDetailsResponseDto> getBankAccounts() {
+        return accountRepository.findAllBankAccounts().stream()
+                .map(AccountDetailsResponseDto::new)
+                .toList();
+    }
+
+    @Override
+    public AccountDetailsResponseDto getBankAccountByCurrency(CurrencyCode currencyCode) {
+        Account account = accountRepository.findBankAccountByCurrencyCode(currencyCode)
+                .orElseThrow(() -> new IllegalArgumentException("Nije pronadjen bankarski racun za valutu: " + currencyCode));
+        return new AccountDetailsResponseDto(account);
+    }
+
+    @Override
+    @Transactional
+    public AccountDetailsResponseDto getAccountDetails(String accountNumber) {
+        Account account = accountRepository.findByBrojRacuna(accountNumber)
+                .orElseThrow(() -> new IllegalArgumentException("Ne postoji racun: " + accountNumber));
+        return new AccountDetailsResponseDto(account);
+    }
+
+    @Override
+    @Transactional
+    public Page<AccountDetailsResponseDto> getClientAccounts(Long clientId, int page, int size) {
+        return accountRepository.findByVlasnikAndStatus(clientId, Status.ACTIVE, PageRequest.of(page, size))
+                .map(AccountDetailsResponseDto::new);
+    }
+
+    // Cards are managed by the Card Service
+//    @Override
+//    public Page<CardResponseDto> getAccountCards(String accountNumber, int page, int size) {
+//        Account account = accountRepository.findByBrojRacuna(accountNumber)
+//                .orElseThrow(() -> new IllegalArgumentException("Ne postoji racun: " + accountNumber));
+//        List<CardResponseDto> cards = cardServiceRestClient.getCardsForAccount(account.getBrojRacuna());
+//        int start = page * size;
+//        int end = Math.min(start + size, cards.size());
+//        List<CardResponseDto> pageContent = start >= cards.size() ? List.of() : cards.subList(start, end);
+//        return new org.springframework.data.domain.PageImpl<>(pageContent, PageRequest.of(page, size), cards.size());
+//    }
+
+    @Override
+    @Transactional
+    public CompanyResponseDto getCompany(Long id) {
+        Company company = companyRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Ne postoji firma sa id: " + id));
+        return new CompanyResponseDto(company);
+    }
+
+    @Override
+    @Transactional
+    public CompanyResponseDto updateCompany(Long id, UpdateCompanyDto dto) {
+        Company company = companyRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Ne postoji firma sa id: " + id));
+        SifraDelatnosti sifra = sifraDelatnostiRepository.findBySifra(dto.getSifraDelatnosti())
+                .orElseThrow(() -> new IllegalArgumentException("Nije uneta sifra delatnosti: " + dto.getSifraDelatnosti()));
+        company.setNaziv(dto.getNaziv());
+        company.setSifraDelatnosti(sifra);
+        company.setAdresa(dto.getAdresa());
+        if (dto.getVlasnik() != null) {
+            company.setVlasnik(dto.getVlasnik());
+        }
+        return new CompanyResponseDto(companyRepository.save(company));
     }
 
     //todo rabit mq

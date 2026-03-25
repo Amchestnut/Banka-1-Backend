@@ -4,6 +4,7 @@ import com.banka1.account_service.domain.Account;
 import com.banka1.account_service.domain.CheckingAccount;
 import com.banka1.account_service.domain.Currency;
 import com.banka1.account_service.domain.enums.CardStatus;
+import com.banka1.account_service.domain.enums.CurrencyCode;
 import com.banka1.account_service.domain.enums.Status;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -68,4 +69,10 @@ public interface AccountRepository extends JpaRepository<Account,Long> {
             @Param("prezime") String prezime,
             Pageable pageable
     );
+
+    @Query("SELECT a FROM Account a WHERE a.vlasnik = -1")
+    List<Account> findAllBankAccounts();
+
+    @Query("SELECT a FROM Account a WHERE a.vlasnik = -1 AND a.currency.oznaka = :currencyCode")
+    Optional<Account> findBankAccountByCurrencyCode(@Param("currencyCode") CurrencyCode currencyCode);
 }

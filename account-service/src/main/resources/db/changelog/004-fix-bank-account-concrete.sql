@@ -6,6 +6,14 @@ WHERE vlasnik = -1
   AND account_type = 'CHECKING'
   AND account_concrete = 'DOO';
 
+-- Fix bank internal FX accounts: BUSINESS ownership requires a company but bank accounts have none.
+-- Change to PERSONAL which does not require a company.
+UPDATE account_table
+SET account_ownership_type = 'PERSONAL'
+WHERE vlasnik = -1
+  AND account_type = 'FX'
+  AND account_ownership_type = 'BUSINESS';
+
 -- Update all 18-digit account numbers to 19 digits by inserting an extra '0' after position 7.
 UPDATE account_table
 SET broj_racuna = SUBSTRING(broj_racuna, 1, 7) || '0' || SUBSTRING(broj_racuna, 8)

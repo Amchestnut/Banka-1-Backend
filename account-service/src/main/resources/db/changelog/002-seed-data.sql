@@ -198,7 +198,7 @@ SELECT
     NULL,
     NULL,
     NULL,
-    'BUSINESS'
+    'PERSONAL'
 FROM currency_table c
 WHERE c.oznaka IN ('EUR', 'CHF', 'USD', 'GBP', 'JPY', 'CAD', 'AUD');
 

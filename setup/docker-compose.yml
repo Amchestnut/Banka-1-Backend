@@ -149,7 +149,7 @@ services:
       POSTGRES_USER: ${EXCHANGE_DB_USER:-postgres}
       POSTGRES_PASSWORD: ${EXCHANGE_DB_PASSWORD:-postgres}
     ports:
-      - "${EXCHANGE_DB_EX_PORT:-5439}:5432"
+      - "${EXCHANGE_DB_EX_PORT:-5440}:5432"
     volumes:
       - postgres-exchange-data:/var/lib/postgresql/data
     networks:

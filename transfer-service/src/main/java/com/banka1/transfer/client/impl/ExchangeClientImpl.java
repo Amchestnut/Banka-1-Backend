@@ -30,7 +30,7 @@ public class ExchangeClientImpl implements ExchangeClient {
         try {
             return exchangeRestClient.get()
                     .uri(uriBuilder -> uriBuilder
-                            .path("/api/exchange/calculate")
+                            .path("/calculate")
                             .queryParam("fromCurrency", fromCurrency)
                             .queryParam("toCurrency", toCurrency)
                             .queryParam("amount", amount)

@@ -26,7 +26,7 @@ repositories {
 }
 
 dependencies {
-	implementation("com.library:company-observability-starter:0.0.1-SNAPSHOT")
+	//implementation("com.library:company-observability-starter:0.0.1-SNAPSHOT")
 	implementation("com.banka1:security-lib:0.0.1-SNAPSHOT")
 	implementation("com.fasterxml.jackson.core:jackson-core:2.21.1")
 	implementation("com.fasterxml.jackson.core:jackson-databind:2.21.1")
@@ -71,7 +71,7 @@ jacoco {
 }
 
 openApi {
-	apiDocsUrl.set("http://localhost:8088/v3/api-docs.yaml")
+	apiDocsUrl.set("http://localhost:8089/v3/api-docs.yaml")
 	outputDir.set(file("docs"))
 	outputFileName.set("openapi.yml")
 	waitTimeInSeconds.set(30)

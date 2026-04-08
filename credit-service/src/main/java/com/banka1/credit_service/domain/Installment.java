@@ -13,7 +13,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "installment_table")
+@Table(name = "installment_table",
+        indexes = {
+                @Index(name = "idx_installment_loan_id", columnList = "loan_id")
+        }
+)
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

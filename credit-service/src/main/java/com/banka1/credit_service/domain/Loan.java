@@ -16,11 +16,19 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "loan_table")
+@Table(name = "loan_table",
+        indexes = {
+        @Index(name = "idx_loan_account_number", columnList = "account_number")
+})
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
+
+///napomena, loanNumber je ovde id, da bi i dalje nasledjivao base entity
+///front ce videti to kao loanNumber ali ce se interno cuvati kao loanId
+
+
 public class Loan extends BaseEntity{
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

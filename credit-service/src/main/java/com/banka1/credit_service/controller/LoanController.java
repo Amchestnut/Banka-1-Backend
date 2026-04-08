@@ -1,6 +1,8 @@
 package com.banka1.credit_service.controller;
 
 import com.banka1.credit_service.domain.LoanRequest;
+import com.banka1.credit_service.domain.enums.InterestType;
+import com.banka1.credit_service.domain.enums.LoanType;
 import com.banka1.credit_service.dto.request.LoanRequestDto;
 import com.banka1.credit_service.dto.response.LoanInfoResponseDto;
 import com.banka1.credit_service.dto.response.LoanRequestResponseDto;
@@ -30,16 +32,16 @@ public class LoanController {
     @PostMapping("/requests")
     public ResponseEntity<LoanRequestResponseDto> requests(@AuthenticationPrincipal Jwt jwt, @RequestBody @Valid LoanRequestDto loanRequestDto)
     {
-        return new ResponseEntity<>(loanService.request(jwt,loanRequestDto), HttpStatus.OK);
+        return new ResponseEntity<>(loanService.request(jwt,loanRequestDto), HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasRole('CLIENT_BASIC')")
+    @PreAuthorize("hasRole('BASIC')")
     @PutMapping("/requests/{id}/approve")
     public ResponseEntity<String> approve(@AuthenticationPrincipal Jwt jwt,@PathVariable Long id)
     {
         return null;
     }
-    @PreAuthorize("hasAnyRole('CLIENT_BASIC','BASIC')")
+    @PreAuthorize("hasRole('BASIC')")
     @PutMapping("/requests/{id}/decline")
     public ResponseEntity<String> decline(@AuthenticationPrincipal Jwt jwt,@PathVariable Long id)
     {
@@ -62,13 +64,13 @@ public class LoanController {
 
     @PreAuthorize("hasRole('BASIC')")
     @GetMapping("/requests")
-    public ResponseEntity<Page<LoanRequest>> findAllLoanRequest(@AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "0") @Min(value = 0) int page, @RequestParam(defaultValue = "10") @Min(value = 1) @Max(value = 100) int size)
+    public ResponseEntity<Page<LoanRequest>> findAllLoanRequest(@AuthenticationPrincipal Jwt jwt, @RequestParam(required = false) String vrstaKredita, @RequestParam(required = false) String brojRacuna,@RequestParam(defaultValue = "0") @Min(value = 0) int page, @RequestParam(defaultValue = "10") @Min(value = 1) @Max(value = 100) int size)
     {
         return null;
     }
     @PreAuthorize("hasRole('BASIC')")
     @GetMapping("/all")
-    public ResponseEntity<Page<LoanResponseDto>> findAllLoans(@AuthenticationPrincipal Jwt jwt,@RequestParam(defaultValue = "0") @Min(value = 0) int page, @RequestParam(defaultValue = "10") @Min(value = 1) @Max(value = 100) int size)
+    public ResponseEntity<Page<LoanResponseDto>> findAllLoans(@AuthenticationPrincipal Jwt jwt,@RequestParam(required = false) String vrstaKredita, @RequestParam(required = false) String brojRacuna,@RequestParam(required = false) String loanStatus,@RequestParam(defaultValue = "0") @Min(value = 0) int page, @RequestParam(defaultValue = "10") @Min(value = 1) @Max(value = 100) int size)
     {
         return null;
     }

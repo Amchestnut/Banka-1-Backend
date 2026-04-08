@@ -12,7 +12,12 @@ import lombok.Setter;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "loan_request_table")
+@Table(
+        name = "loan_request_table",
+        indexes = {
+        @Index(name = "idx_loan_request_client_id", columnList = "client_id")
+        }
+)
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

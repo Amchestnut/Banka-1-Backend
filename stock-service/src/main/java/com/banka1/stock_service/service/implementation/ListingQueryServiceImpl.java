@@ -3,15 +3,28 @@ package com.banka1.stock_service.service.implementation;
 import com.banka1.stock_service.domain.ForexPair;
 import com.banka1.stock_service.domain.FuturesContract;
 import com.banka1.stock_service.domain.Listing;
+import com.banka1.stock_service.domain.ListingDailyPriceInfo;
 import com.banka1.stock_service.domain.ListingType;
+import com.banka1.stock_service.domain.OptionType;
 import com.banka1.stock_service.domain.Stock;
+import com.banka1.stock_service.domain.StockOption;
 import com.banka1.stock_service.dto.ListingFilterRequest;
+import com.banka1.stock_service.dto.ListingDailyPriceInfoResponse;
+import com.banka1.stock_service.dto.ListingDetailsPeriod;
+import com.banka1.stock_service.dto.ListingDetailsResponse;
+import com.banka1.stock_service.dto.ListingForexDetailsResponse;
+import com.banka1.stock_service.dto.ListingFuturesDetailsResponse;
 import com.banka1.stock_service.dto.ListingSortField;
+import com.banka1.stock_service.dto.ListingStockDetailsResponse;
 import com.banka1.stock_service.dto.ListingSummaryResponse;
+import com.banka1.stock_service.dto.StockOptionDetailsResponse;
+import com.banka1.stock_service.dto.StockOptionSettlementGroupResponse;
 import com.banka1.stock_service.repository.ForexPairRepository;
 import com.banka1.stock_service.repository.FuturesContractRepository;
+import com.banka1.stock_service.repository.ListingDailyPriceInfoRepository;
 import com.banka1.stock_service.repository.ListingRepository;
 import com.banka1.stock_service.repository.StockRepository;
+import com.banka1.stock_service.repository.StockOptionRepository;
 import com.banka1.stock_service.service.ListingQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,6 +39,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -34,6 +48,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 /**
  * Default implementation of {@link ListingQueryService}.
@@ -58,6 +73,25 @@ public class ListingQueryServiceImpl implements ListingQueryService {
     private final StockRepository stockRepository;
     private final FuturesContractRepository futuresContractRepository;
     private final ForexPairRepository forexPairRepository;
+    private final ListingDailyPriceInfoRepository listingDailyPriceInfoRepository;
+    private final StockOptionRepository stockOptionRepository;
+
+    @Override
+    @Transactional(readOnly = true)
+    public ListingDetailsResponse getListingDetails(Long listingId, ListingDetailsPeriod period) {
+        Objects.requireNonNull(period, "period must not be null");
+
+        Listing listing = listingRepository.findById(listingId)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Listing with id %s was not found.".formatted(listingId)));
+
+        List<ListingDailyPriceInfoResponse> priceHistory = resolvePriceHistory(listing, period);
+
+        return switch (listing.getListingType()) {
+            case STOCK -> buildStockDetailsResponse(listing, period, priceHistory);
+            case FUTURES -> buildFuturesDetailsResponse(listing, period, priceHistory);
+            case FOREX -> buildForexDetailsResponse(listing, period, priceHistory);
+        };
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -164,6 +198,216 @@ public class ListingQueryServiceImpl implements ListingQueryService {
                     );
                 })
                 .toList();
+    }
+
+    /**
+     * Builds the detailed response for one stock listing.
+     *
+     * @param listing stock listing
+     * @param period requested history window
+     * @param priceHistory filtered historical price rows
+     * @return detailed stock response
+     */
+    private ListingDetailsResponse buildStockDetailsResponse(
+            Listing listing,
+            ListingDetailsPeriod period,
+            List<ListingDailyPriceInfoResponse> priceHistory
+    ) {
+        Stock stock = stockRepository.findById(listing.getSecurityId())
+                .orElseThrow(() -> missingUnderlyingEntity(listing, "stock"));
+
+        BigDecimal maintenanceMargin = stock.calculateMaintenanceMargin(listing.getPrice());
+        List<StockOptionSettlementGroupResponse> optionGroups = groupOptionsBySettlementDate(
+                stockOptionRepository.findAllByStockIdOrderBySettlementDateAscStrikePriceAsc(stock.getId()),
+                listing.getPrice()
+        );
+
+        return createDetailsResponse(
+                listing,
+                listing.calculateInitialMarginCost(maintenanceMargin),
+                period,
+                priceHistory,
+                new ListingStockDetailsResponse(
+                        stock.getOutstandingShares(),
+                        stock.getDividendYield(),
+                        stock.getContractSize()
+                ),
+                null,
+                null,
+                optionGroups
+        );
+    }
+
+    /**
+     * Builds the detailed response for one futures listing.
+     *
+     * @param listing futures listing
+     * @param period requested history window
+     * @param priceHistory filtered historical price rows
+     * @return detailed futures response
+     */
+    private ListingDetailsResponse buildFuturesDetailsResponse(
+            Listing listing,
+            ListingDetailsPeriod period,
+            List<ListingDailyPriceInfoResponse> priceHistory
+    ) {
+        FuturesContract contract = futuresContractRepository.findById(listing.getSecurityId())
+                .orElseThrow(() -> missingUnderlyingEntity(listing, "futures contract"));
+
+        BigDecimal maintenanceMargin = contract.calculateMaintenanceMargin(listing.getPrice());
+
+        return createDetailsResponse(
+                listing,
+                listing.calculateInitialMarginCost(maintenanceMargin),
+                period,
+                priceHistory,
+                null,
+                new ListingFuturesDetailsResponse(
+                        contract.getContractSize(),
+                        contract.getContractUnit(),
+                        contract.getSettlementDate()
+                ),
+                null,
+                List.of()
+        );
+    }
+
+    /**
+     * Builds the detailed response for one FX listing.
+     *
+     * @param listing FX listing
+     * @param period requested history window
+     * @param priceHistory filtered historical price rows
+     * @return detailed FX response
+     */
+    private ListingDetailsResponse buildForexDetailsResponse(
+            Listing listing,
+            ListingDetailsPeriod period,
+            List<ListingDailyPriceInfoResponse> priceHistory
+    ) {
+        ForexPair pair = forexPairRepository.findById(listing.getSecurityId())
+                .orElseThrow(() -> missingUnderlyingEntity(listing, "forex pair"));
+
+        return createDetailsResponse(
+                listing,
+                listing.calculateInitialMarginCost(pair.calculateMaintenanceMargin()),
+                period,
+                priceHistory,
+                null,
+                null,
+                new ListingForexDetailsResponse(
+                        pair.getBaseCurrency(),
+                        pair.getQuoteCurrency(),
+                        pair.getExchangeRate(),
+                        pair.getLiquidity(),
+                        pair.getContractSize()
+                ),
+                List.of()
+        );
+    }
+
+    /**
+     * Resolves filtered historical price rows for the requested period.
+     *
+     * @param listing listing whose history is needed
+     * @param period requested history window
+     * @return filtered historical rows ordered by date ascending
+     */
+    private List<ListingDailyPriceInfoResponse> resolvePriceHistory(Listing listing, ListingDetailsPeriod period) {
+        List<ListingDailyPriceInfo> history = listingDailyPriceInfoRepository.findAllByListingIdOrderByDateAsc(listing.getId());
+        LocalDate anchorDate = history.isEmpty()
+                ? listing.getLastRefresh().toLocalDate()
+                : history.getLast().getDate();
+        LocalDate startDate = period.resolveStartDate(anchorDate);
+
+        return history.stream()
+                .filter(entry -> startDate == null || !entry.getDate().isBefore(startDate))
+                .map(this::toDailyPriceInfoResponse)
+                .toList();
+    }
+
+    /**
+     * Groups stock options by settlement date and separates calls from puts.
+     *
+     * @param options stock options attached to one stock
+     * @param stockPrice current underlying stock price
+     * @return grouped option response rows
+     */
+    private List<StockOptionSettlementGroupResponse> groupOptionsBySettlementDate(
+            List<StockOption> options,
+            BigDecimal stockPrice
+    ) {
+        Map<LocalDate, List<StockOption>> optionsBySettlementDate = options.stream()
+                .collect(Collectors.groupingBy(
+                        StockOption::getSettlementDate,
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ));
+
+        return optionsBySettlementDate.entrySet().stream()
+                .map(entry -> new StockOptionSettlementGroupResponse(
+                        entry.getKey(),
+                        entry.getValue().stream()
+                                .filter(option -> option.getOptionType() == OptionType.CALL)
+                                .map(option -> toStockOptionDetailsResponse(option, stockPrice))
+                                .toList(),
+                        entry.getValue().stream()
+                                .filter(option -> option.getOptionType() == OptionType.PUT)
+                                .map(option -> toStockOptionDetailsResponse(option, stockPrice))
+                                .toList()
+                ))
+                .toList();
+    }
+
+    /**
+     * Creates the shared top-level detailed response for one listing.
+     *
+     * @param listing listing entity
+     * @param initialMarginCost derived initial margin cost
+     * @param period requested history window
+     * @param priceHistory filtered historical rows
+     * @param stockDetails stock-specific details when applicable
+     * @param futuresDetails futures-specific details when applicable
+     * @param forexDetails FX-specific details when applicable
+     * @param optionGroups grouped stock options when applicable
+     * @return public detailed response
+     */
+    private ListingDetailsResponse createDetailsResponse(
+            Listing listing,
+            BigDecimal initialMarginCost,
+            ListingDetailsPeriod period,
+            List<ListingDailyPriceInfoResponse> priceHistory,
+            ListingStockDetailsResponse stockDetails,
+            ListingFuturesDetailsResponse futuresDetails,
+            ListingForexDetailsResponse forexDetails,
+            List<StockOptionSettlementGroupResponse> optionGroups
+    ) {
+        return new ListingDetailsResponse(
+                listing.getId(),
+                listing.getSecurityId(),
+                listing.getListingType(),
+                listing.getTicker(),
+                listing.getName(),
+                listing.getStockExchange().getId(),
+                listing.getStockExchange().getExchangeMICCode(),
+                listing.getStockExchange().getExchangeAcronym(),
+                listing.getStockExchange().getExchangeName(),
+                listing.getLastRefresh(),
+                listing.getPrice(),
+                listing.getAsk(),
+                listing.getBid(),
+                listing.getChange(),
+                listing.calculateChangePercent(),
+                listing.getVolume(),
+                listing.calculateDollarVolume(),
+                initialMarginCost,
+                period,
+                priceHistory,
+                stockDetails,
+                futuresDetails,
+                forexDetails,
+                optionGroups
+        );
     }
 
     /**
@@ -338,6 +582,44 @@ public class ListingQueryServiceImpl implements ListingQueryService {
     }
 
     /**
+     * Converts one historical entity into the public daily price response contract.
+     *
+     * @param entity historical price entity
+     * @return public historical response row
+     */
+    private ListingDailyPriceInfoResponse toDailyPriceInfoResponse(ListingDailyPriceInfo entity) {
+        return new ListingDailyPriceInfoResponse(
+                entity.getDate(),
+                entity.getPrice(),
+                entity.getAsk(),
+                entity.getBid(),
+                entity.getChange(),
+                entity.calculateChangePercent(),
+                entity.getVolume(),
+                entity.calculateDollarVolume()
+        );
+    }
+
+    /**
+     * Converts one stock option into the public option response contract.
+     *
+     * @param option stock option entity
+     * @param stockPrice current underlying stock price
+     * @return public option response row
+     */
+    private StockOptionDetailsResponse toStockOptionDetailsResponse(StockOption option, BigDecimal stockPrice) {
+        return new StockOptionDetailsResponse(
+                option.getId(),
+                option.getTicker(),
+                option.getOptionType(),
+                option.getStrikePrice(),
+                option.getImpliedVolatility(),
+                option.getOpenInterest(),
+                option.isInTheMoney(stockPrice)
+        );
+    }
+
+    /**
      * Extracts security ids from listings for batch loading of underlying entities.
      *
      * @param listings listings of one category
@@ -391,12 +673,23 @@ public class ListingQueryServiceImpl implements ListingQueryService {
     private <T> T requireUnderlyingSecurity(Map<Long, T> entitiesById, Listing listing, String entityLabel) {
         T entity = entitiesById.get(listing.getSecurityId());
         if (entity == null) {
-            throw new IllegalStateException(
-                    "Underlying %s with id %s was not found for listing %s."
-                            .formatted(entityLabel, listing.getSecurityId(), listing.getId())
-            );
+            throw missingUnderlyingEntity(listing, entityLabel);
         }
         return entity;
+    }
+
+    /**
+     * Creates the exception used when one listing points to a missing underlying entity.
+     *
+     * @param listing affected listing
+     * @param entityLabel missing entity label
+     * @return exception describing the inconsistency
+     */
+    private IllegalStateException missingUnderlyingEntity(Listing listing, String entityLabel) {
+        return new IllegalStateException(
+                "Underlying %s with id %s was not found for listing %s."
+                        .formatted(entityLabel, listing.getSecurityId(), listing.getId())
+        );
     }
 
     /**

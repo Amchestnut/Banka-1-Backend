@@ -50,7 +50,8 @@ public class ListingMarketDataScheduler {
 
         ListingRefreshBatchResponse response = refreshOpenListings();
         log.info(
-                "Scheduled listing refresh completed. processedListings={}, refreshedCount={}, skippedClosedCount={}, skippedUnsupportedCount={}, failedCount={}",
+                "Scheduled listing refresh completed. processedListings={}, refreshedCount={}, "
+                        + "skippedClosedCount={}, skippedUnsupportedCount={}, failedCount={}",
                 response.processedListings(),
                 response.refreshedCount(),
                 response.skippedClosedCount(),

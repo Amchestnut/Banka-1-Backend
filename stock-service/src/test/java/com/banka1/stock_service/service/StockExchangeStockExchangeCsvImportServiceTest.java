@@ -29,6 +29,10 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class StockExchangeStockExchangeCsvImportServiceTest {
 
+    private static final String EXCHANGE_CSV_HEADER =
+            "Exchange Name,Exchange Acronym,Exchange Mic Code,Country,Currency,Time Zone,Open Time,Close Time,"
+                    + "Pre Market Open Time,Pre Market Close Time,Post Market Open Time,Post Market Close Time,Is Active";
+
     @Mock
     private StockExchangeRepository stockExchangeRepository;
 
@@ -39,11 +43,11 @@ class StockExchangeStockExchangeCsvImportServiceTest {
         when(stockExchangeRepository.saveAll(any())).thenAnswer(invocation -> List.of());
 
         StockExchangeImportResponse response = service.importFromResource(
-                csvResource("""
-                        Exchange Name,Exchange Acronym,Exchange Mic Code,Country,Currency,Time Zone,Open Time,Close Time,Pre Market Open Time,Pre Market Close Time,Post Market Open Time,Post Market Close Time,Is Active
-                        New York Stock Exchange,NYSE,XNYS,United States,USD,America/New_York,09:30,16:00,07:00,09:30,16:00,20:00,true
-                        London Stock Exchange,LSE,XLON,United Kingdom,GBP,Europe/London,08:00,16:30,,,,,true
-                        """),
+                csvResource(csvContent(
+                        EXCHANGE_CSV_HEADER,
+                        "New York Stock Exchange,NYSE,XNYS,United States,USD,America/New_York,09:30,16:00,07:00,09:30,16:00,20:00,true",
+                        "London Stock Exchange,LSE,XLON,United Kingdom,GBP,Europe/London,08:00,16:30,,,,,true"
+                )),
                 "test-exchanges.csv"
         );
 
@@ -85,10 +89,10 @@ class StockExchangeStockExchangeCsvImportServiceTest {
         when(stockExchangeRepository.saveAll(any())).thenAnswer(invocation -> List.of(existingExchange));
 
         StockExchangeImportResponse response = service.importFromResource(
-                csvResource("""
-                        Exchange Name,Exchange Acronym,Exchange Mic Code,Country,Currency,Time Zone,Open Time,Close Time,Pre Market Open Time,Pre Market Close Time,Post Market Open Time,Post Market Close Time,Is Active
-                        New York Stock Exchange,NYSE,XNYS,United States,USD,America/New_York,09:30,16:00,07:00,09:30,16:00,20:00,true
-                        """),
+                csvResource(csvContent(
+                        EXCHANGE_CSV_HEADER,
+                        "New York Stock Exchange,NYSE,XNYS,United States,USD,America/New_York,09:30,16:00,07:00,09:30,16:00,20:00,true"
+                )),
                 "test-exchanges.csv"
         );
 
@@ -121,10 +125,10 @@ class StockExchangeStockExchangeCsvImportServiceTest {
         when(stockExchangeRepository.findAllByExchangeMICCodeIn(any())).thenReturn(List.of(existingExchange));
 
         StockExchangeImportResponse response = service.importFromResource(
-                csvResource("""
-                        Exchange Name,Exchange Acronym,Exchange Mic Code,Country,Currency,Time Zone,Open Time,Close Time,Pre Market Open Time,Pre Market Close Time,Post Market Open Time,Post Market Close Time,Is Active
-                        New York Stock Exchange,NYSE,XNYS,United States,USD,America/New_York,09:30,16:00,07:00,09:30,16:00,20:00,true
-                        """),
+                csvResource(csvContent(
+                        EXCHANGE_CSV_HEADER,
+                        "New York Stock Exchange,NYSE,XNYS,United States,USD,America/New_York,09:30,16:00,07:00,09:30,16:00,20:00,true"
+                )),
                 "test-exchanges.csv"
         );
 
@@ -140,11 +144,11 @@ class StockExchangeStockExchangeCsvImportServiceTest {
         StockExchangeCsvImportService service = createService();
 
         assertThatThrownBy(() -> service.importFromResource(
-                csvResource("""
-                        Exchange Name,Exchange Acronym,Exchange Mic Code,Country,Currency,Time Zone,Open Time,Close Time,Pre Market Open Time,Pre Market Close Time,Post Market Open Time,Post Market Close Time,Is Active
-                        New York Stock Exchange,NYSE,XNYS,United States,USD,America/New_York,09:30,16:00,07:00,09:30,16:00,20:00,true
-                        NYSE Duplicate,NYSE,XNYS,United States,USD,America/New_York,09:30,16:00,07:00,09:30,16:00,20:00,true
-                        """),
+                csvResource(csvContent(
+                        EXCHANGE_CSV_HEADER,
+                        "New York Stock Exchange,NYSE,XNYS,United States,USD,America/New_York,09:30,16:00,07:00,09:30,16:00,20:00,true",
+                        "NYSE Duplicate,NYSE,XNYS,United States,USD,America/New_York,09:30,16:00,07:00,09:30,16:00,20:00,true"
+                )),
                 "test-exchanges.csv"
         )).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Duplicate MIC code 'XNYS'");
@@ -160,5 +164,9 @@ class StockExchangeStockExchangeCsvImportServiceTest {
 
     private ByteArrayResource csvResource(String content) {
         return new ByteArrayResource(content.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private String csvContent(String... lines) {
+        return String.join(System.lineSeparator(), lines);
     }
 }

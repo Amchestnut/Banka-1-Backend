@@ -349,12 +349,42 @@ public class StockExchangeCsvImportService {
                 requiredValue(values, headerIndexes, POLITY_HEADERS, lineNumber, source),
                 requiredValue(values, headerIndexes, CURRENCY_HEADERS, lineNumber, source),
                 requiredValue(values, headerIndexes, TIME_ZONE_HEADERS, lineNumber, source),
-                parseTime(requiredValue(values, headerIndexes, OPEN_TIME_HEADERS, lineNumber, source), "Open Time", lineNumber, source),
-                parseTime(requiredValue(values, headerIndexes, CLOSE_TIME_HEADERS, lineNumber, source), "Close Time", lineNumber, source),
-                parseOptionalTime(optionalValue(values, headerIndexes, PRE_MARKET_OPEN_HEADERS), "Pre Market Open Time", lineNumber, source),
-                parseOptionalTime(optionalValue(values, headerIndexes, PRE_MARKET_CLOSE_HEADERS), "Pre Market Close Time", lineNumber, source),
-                parseOptionalTime(optionalValue(values, headerIndexes, POST_MARKET_OPEN_HEADERS), "Post Market Open Time", lineNumber, source),
-                parseOptionalTime(optionalValue(values, headerIndexes, POST_MARKET_CLOSE_HEADERS), "Post Market Close Time", lineNumber, source),
+                parseTime(
+                        requiredValue(values, headerIndexes, OPEN_TIME_HEADERS, lineNumber, source),
+                        "Open Time",
+                        lineNumber,
+                        source
+                ),
+                parseTime(
+                        requiredValue(values, headerIndexes, CLOSE_TIME_HEADERS, lineNumber, source),
+                        "Close Time",
+                        lineNumber,
+                        source
+                ),
+                parseOptionalTime(
+                        optionalValue(values, headerIndexes, PRE_MARKET_OPEN_HEADERS),
+                        "Pre Market Open Time",
+                        lineNumber,
+                        source
+                ),
+                parseOptionalTime(
+                        optionalValue(values, headerIndexes, PRE_MARKET_CLOSE_HEADERS),
+                        "Pre Market Close Time",
+                        lineNumber,
+                        source
+                ),
+                parseOptionalTime(
+                        optionalValue(values, headerIndexes, POST_MARKET_OPEN_HEADERS),
+                        "Post Market Open Time",
+                        lineNumber,
+                        source
+                ),
+                parseOptionalTime(
+                        optionalValue(values, headerIndexes, POST_MARKET_CLOSE_HEADERS),
+                        "Post Market Close Time",
+                        lineNumber,
+                        source
+                ),
                 parseOptionalBoolean(optionalValue(values, headerIndexes, IS_ACTIVE_HEADERS))
         );
     }

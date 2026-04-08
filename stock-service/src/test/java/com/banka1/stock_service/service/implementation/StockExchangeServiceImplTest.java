@@ -52,7 +52,8 @@ class StockExchangeServiceImplTest {
 
     @Test
     void getStockExchangeStatusDetectsPreMarketFromExchangeTimezone() {
-        when(stockExchangeRepository.findById(1L)).thenReturn(Optional.of(createExchange(1L, "New York Stock Exchange", "NYSE", "XNYS", true)));
+        when(stockExchangeRepository.findById(1L))
+                .thenReturn(Optional.of(createExchange(1L, "New York Stock Exchange", "NYSE", "XNYS", true)));
 
         StockExchangeStatusResponse response = serviceAt("2026-04-06T13:00:00Z").getStockExchangeStatus(1L);
 
@@ -67,7 +68,8 @@ class StockExchangeServiceImplTest {
 
     @Test
     void getStockExchangeStatusDetectsRegularMarketHours() {
-        when(stockExchangeRepository.findById(1L)).thenReturn(Optional.of(createExchange(1L, "New York Stock Exchange", "NYSE", "XNYS", true)));
+        when(stockExchangeRepository.findById(1L))
+                .thenReturn(Optional.of(createExchange(1L, "New York Stock Exchange", "NYSE", "XNYS", true)));
 
         StockExchangeStatusResponse response = serviceAt("2026-04-06T14:30:00Z").getStockExchangeStatus(1L);
 
@@ -79,7 +81,8 @@ class StockExchangeServiceImplTest {
 
     @Test
     void getStockExchangeStatusDetectsPostMarketHours() {
-        when(stockExchangeRepository.findById(1L)).thenReturn(Optional.of(createExchange(1L, "New York Stock Exchange", "NYSE", "XNYS", true)));
+        when(stockExchangeRepository.findById(1L))
+                .thenReturn(Optional.of(createExchange(1L, "New York Stock Exchange", "NYSE", "XNYS", true)));
 
         StockExchangeStatusResponse response = serviceAt("2026-04-06T21:00:00Z").getStockExchangeStatus(1L);
 
@@ -91,7 +94,8 @@ class StockExchangeServiceImplTest {
 
     @Test
     void getStockExchangeStatusClosesExchangeOnWeekend() {
-        when(stockExchangeRepository.findById(1L)).thenReturn(Optional.of(createExchange(1L, "New York Stock Exchange", "NYSE", "XNYS", true)));
+        when(stockExchangeRepository.findById(1L))
+                .thenReturn(Optional.of(createExchange(1L, "New York Stock Exchange", "NYSE", "XNYS", true)));
 
         StockExchangeStatusResponse response = serviceAt("2026-04-04T15:00:00Z").getStockExchangeStatus(1L);
 
@@ -104,7 +108,8 @@ class StockExchangeServiceImplTest {
 
     @Test
     void getStockExchangeStatusBypassesChecksWhenExchangeIsInactive() {
-        when(stockExchangeRepository.findById(1L)).thenReturn(Optional.of(createExchange(1L, "New York Stock Exchange", "NYSE", "XNYS", false)));
+        when(stockExchangeRepository.findById(1L))
+                .thenReturn(Optional.of(createExchange(1L, "New York Stock Exchange", "NYSE", "XNYS", false)));
 
         StockExchangeStatusResponse response = serviceAt("2026-04-04T15:00:00Z").getStockExchangeStatus(1L);
 

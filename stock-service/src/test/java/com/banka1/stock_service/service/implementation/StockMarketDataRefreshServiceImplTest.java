@@ -65,7 +65,8 @@ class StockMarketDataRefreshServiceImplTest {
         ListingDailyPriceInfo existingToday = createDailyEntry(listing, LocalDate.of(2026, 4, 8));
 
         when(stockRepository.findByTicker("AAPL")).thenReturn(Optional.of(stock));
-        when(listingRepository.findByListingTypeAndSecurityId(ListingType.STOCK, 1L)).thenReturn(Optional.of(listing));
+        when(listingRepository.findByListingTypeAndSecurityId(ListingType.STOCK, 1L))
+                .thenReturn(Optional.of(listing));
         when(listingDailyPriceInfoRepository.findAllByListingIdOrderByDateAsc(10L)).thenReturn(List.of(existingToday));
         when(alphaVantageClient.fetchQuote("AAPL")).thenReturn(new AlphaVantageQuoteResponse(
                 "AAPL",
@@ -110,7 +111,9 @@ class StockMarketDataRefreshServiceImplTest {
         assertThat(listing.getLastRefresh()).isEqualTo(LocalDateTime.of(2026, 4, 8, 10, 15, 30));
 
         @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<ListingDailyPriceInfo>> captor = ArgumentCaptor.forClass((Class<List<ListingDailyPriceInfo>>) (Class<?>) List.class);
+        ArgumentCaptor<List<ListingDailyPriceInfo>> captor = ArgumentCaptor.forClass(
+                (Class<List<ListingDailyPriceInfo>>) (Class<?>) List.class
+        );
         verify(listingDailyPriceInfoRepository).saveAll(captor.capture());
 
         List<ListingDailyPriceInfo> persistedEntries = captor.getValue();
@@ -155,7 +158,8 @@ class StockMarketDataRefreshServiceImplTest {
         Listing listing = createListing(stock);
 
         when(stockRepository.findByTicker("AAPL")).thenReturn(Optional.of(stock));
-        when(listingRepository.findByListingTypeAndSecurityId(ListingType.STOCK, 1L)).thenReturn(Optional.of(listing));
+        when(listingRepository.findByListingTypeAndSecurityId(ListingType.STOCK, 1L))
+                .thenReturn(Optional.of(listing));
         when(alphaVantageClient.fetchQuote("AAPL")).thenThrow(new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "timeout"));
 
         assertThatThrownBy(() -> serviceAt("2026-04-08T10:15:30Z").refreshStock("AAPL"))

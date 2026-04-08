@@ -1,6 +1,8 @@
 package com.banka1.stock_service.service;
 
 import com.banka1.stock_service.dto.ListingFilterRequest;
+import com.banka1.stock_service.dto.ListingDetailsPeriod;
+import com.banka1.stock_service.dto.ListingDetailsResponse;
 import com.banka1.stock_service.dto.ListingSortField;
 import com.banka1.stock_service.dto.ListingSummaryResponse;
 import org.springframework.data.domain.Page;
@@ -14,6 +16,15 @@ import org.springframework.data.domain.Sort;
  * manual pagination behave consistently across all three endpoints.
  */
 public interface ListingQueryService {
+
+    /**
+     * Loads one detailed listing view with type-specific fields and historical price rows.
+     *
+     * @param listingId listing identifier
+     * @param period requested history window
+     * @return detailed listing response
+     */
+    ListingDetailsResponse getListingDetails(Long listingId, ListingDetailsPeriod period);
 
     /**
      * Loads paginated stock listings.

@@ -1,6 +1,9 @@
 package com.banka1.stock_service.controller;
 
+import com.banka1.stock_service.domain.ListingType;
 import com.banka1.stock_service.dto.ListingFilterRequest;
+import com.banka1.stock_service.dto.ListingDetailsPeriod;
+import com.banka1.stock_service.dto.ListingDetailsResponse;
 import com.banka1.stock_service.dto.ListingRefreshResponse;
 import com.banka1.stock_service.dto.ListingSortField;
 import com.banka1.stock_service.dto.ListingSummaryResponse;
@@ -11,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 
 /**
  * Listing API for listing-catalog queries and manual market-data refresh operations.
@@ -30,6 +35,25 @@ public class ListingController {
 
     private final ListingMarketDataRefreshService listingMarketDataRefreshService;
     private final ListingQueryService listingQueryService;
+
+    /**
+     * Returns one detailed listing view with type-specific fields and historical prices.
+     *
+     * @param id listing identifier
+     * @param period requested history window
+     * @return detailed listing response
+     */
+    @GetMapping("/api/listings/{id}")
+    @PreAuthorize("hasAnyRole('CLIENT_BASIC', 'BASIC', 'AGENT', 'SUPERVISOR', 'ADMIN', 'SERVICE')")
+    public ResponseEntity<ListingDetailsResponse> getListingDetails(
+            @PathVariable Long id,
+            @RequestParam ListingDetailsPeriod period,
+            Authentication authentication
+    ) {
+        ListingDetailsResponse response = listingQueryService.getListingDetails(id, period);
+        rejectUnauthorizedForexAccess(response, authentication);
+        return ResponseEntity.ok(response);
+    }
 
     /**
      * Returns paginated stock listings available to clients and actuary-side users.
@@ -144,5 +168,29 @@ public class ListingController {
                         "Unsupported sortDirection value '%s'. Supported values are asc and desc."
                                 .formatted(sortDirection)
                 ));
+    }
+
+    /**
+     * Keeps FX detail access aligned with the existing FX catalog authorization rules.
+     *
+     * @param response resolved listing details
+     * @param authentication caller authentication
+     */
+    private void rejectUnauthorizedForexAccess(ListingDetailsResponse response, Authentication authentication) {
+        if (response.listingType() != ListingType.FOREX) {
+            return;
+        }
+
+        boolean hasActuaryAccess = authentication.getAuthorities().stream()
+                .map(grantedAuthority -> grantedAuthority.getAuthority())
+                .anyMatch(authority -> authority.equals("ROLE_BASIC")
+                        || authority.equals("ROLE_AGENT")
+                        || authority.equals("ROLE_SUPERVISOR")
+                        || authority.equals("ROLE_ADMIN")
+                        || authority.equals("ROLE_SERVICE"));
+
+        if (!hasActuaryAccess) {
+            throw new ResponseStatusException(FORBIDDEN, "Forex listing details are not available to client users.");
+        }
     }
 }

@@ -1,10 +1,18 @@
 package com.banka1.stock_service.controller;
 
 import com.banka1.stock_service.domain.ListingType;
+import com.banka1.stock_service.domain.OptionType;
 import com.banka1.stock_service.dto.ListingFilterRequest;
+import com.banka1.stock_service.dto.ListingDailyPriceInfoResponse;
+import com.banka1.stock_service.dto.ListingDetailsPeriod;
+import com.banka1.stock_service.dto.ListingDetailsResponse;
+import com.banka1.stock_service.dto.ListingForexDetailsResponse;
 import com.banka1.stock_service.dto.ListingRefreshResponse;
 import com.banka1.stock_service.dto.ListingSortField;
+import com.banka1.stock_service.dto.ListingStockDetailsResponse;
 import com.banka1.stock_service.dto.ListingSummaryResponse;
+import com.banka1.stock_service.dto.StockOptionDetailsResponse;
+import com.banka1.stock_service.dto.StockOptionSettlementGroupResponse;
 import com.banka1.stock_service.service.ListingMarketDataRefreshService;
 import com.banka1.stock_service.service.ListingQueryService;
 import org.junit.jupiter.api.Test;
@@ -59,6 +67,116 @@ class ListingControllerWebMvcTest {
 
     @MockitoBean
     private ListingQueryService listingQueryService;
+
+    @Test
+    void getListingDetailsReturnsOkForClientRole() throws Exception {
+        when(listingQueryService.getListingDetails(15L, ListingDetailsPeriod.WEEK)).thenReturn(new ListingDetailsResponse(
+                15L,
+                101L,
+                ListingType.STOCK,
+                "AAPL",
+                "Apple Inc.",
+                8L,
+                "XNAS",
+                "NASDAQ",
+                "Nasdaq",
+                LocalDateTime.of(2026, 4, 8, 10, 15, 30),
+                new java.math.BigDecimal("180.00000000"),
+                new java.math.BigDecimal("180.20000000"),
+                new java.math.BigDecimal("179.90000000"),
+                new java.math.BigDecimal("3.00000000"),
+                new java.math.BigDecimal("1.6949"),
+                2_000L,
+                new java.math.BigDecimal("360000.00000000"),
+                new java.math.BigDecimal("99.00000000"),
+                ListingDetailsPeriod.WEEK,
+                List.of(new ListingDailyPriceInfoResponse(
+                        LocalDate.of(2026, 4, 7),
+                        new java.math.BigDecimal("178.00000000"),
+                        new java.math.BigDecimal("178.20000000"),
+                        new java.math.BigDecimal("177.90000000"),
+                        new java.math.BigDecimal("2.00000000"),
+                        new java.math.BigDecimal("1.1364"),
+                        1_500L,
+                        new java.math.BigDecimal("267000.00000000")
+                )),
+                new ListingStockDetailsResponse(
+                        15_550_061_000L,
+                        new java.math.BigDecimal("0.0044"),
+                        1
+                ),
+                null,
+                null,
+                List.of(new StockOptionSettlementGroupResponse(
+                        LocalDate.of(2026, 5, 15),
+                        List.of(new StockOptionDetailsResponse(
+                                501L,
+                                "AAPL260515C00175000",
+                                OptionType.CALL,
+                                new java.math.BigDecimal("175.0000"),
+                                new java.math.BigDecimal("0.25000000"),
+                                2_500,
+                                true
+                        )),
+                        List.of()
+                ))
+        ));
+
+        mockMvc.perform(get("/api/listings/15")
+                        .param("period", "WEEK")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_CLIENT_BASIC"))
+                                .jwt(token -> token.claim("id", 5L))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ticker").value("AAPL"))
+                .andExpect(jsonPath("$.requestedPeriod").value("WEEK"))
+                .andExpect(jsonPath("$.priceHistory[0].date").value("2026-04-07"))
+                .andExpect(jsonPath("$.stockDetails.contractSize").value(1))
+                .andExpect(jsonPath("$.optionGroups[0].calls[0].inTheMoney").value(true));
+
+        verify(listingQueryService).getListingDetails(15L, ListingDetailsPeriod.WEEK);
+    }
+
+    @Test
+    void getForexListingDetailsReturnsForbiddenForClientRole() throws Exception {
+        when(listingQueryService.getListingDetails(21L, ListingDetailsPeriod.DAY)).thenReturn(new ListingDetailsResponse(
+                21L,
+                301L,
+                ListingType.FOREX,
+                "EUR/USD",
+                "EUR / USD",
+                8L,
+                "XNAS",
+                "NASDAQ",
+                "Nasdaq",
+                LocalDateTime.of(2026, 4, 8, 10, 15, 30),
+                new java.math.BigDecimal("1.08350000"),
+                new java.math.BigDecimal("1.08370000"),
+                new java.math.BigDecimal("1.08330000"),
+                new java.math.BigDecimal("0.00050000"),
+                new java.math.BigDecimal("0.0462"),
+                1_000L,
+                new java.math.BigDecimal("1083.50000000"),
+                new java.math.BigDecimal("119.18500000"),
+                ListingDetailsPeriod.DAY,
+                List.of(),
+                null,
+                null,
+                new ListingForexDetailsResponse(
+                        "EUR",
+                        "USD",
+                        new java.math.BigDecimal("1.08350000"),
+                        com.banka1.stock_service.domain.Liquidity.HIGH,
+                        1_000
+                ),
+                List.of()
+        ));
+
+        mockMvc.perform(get("/api/listings/21")
+                        .param("period", "DAY")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_CLIENT_BASIC"))
+                                .jwt(token -> token.claim("id", 5L))))
+                .andExpect(status().isForbidden());
+    }
 
     @Test
     void refreshListingReturnsForbiddenForBasicRole() throws Exception {

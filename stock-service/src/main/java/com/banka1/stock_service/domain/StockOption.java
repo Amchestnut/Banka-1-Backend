@@ -129,7 +129,35 @@ public class StockOption {
                 .multiply(MAINTENANCE_MARGIN_RATE);
     }
 
+    /**
+     * Determines whether the option is currently in the money for the provided stock price.
+     *
+     * <p>Calls are in the money when the stock price is above the strike price. Puts are in the
+     * money when the stock price is below the strike price. At-the-money contracts are treated as
+     * out of the money for this simplified API response.
+     *
+     * @param stockPrice current price of the underlying stock
+     * @return {@code true} when the option is in the money
+     */
+    public boolean isInTheMoney(BigDecimal stockPrice) {
+        BigDecimal currentStockPrice = requireStockPrice(stockPrice);
+        BigDecimal currentStrikePrice = requireStrikePrice();
+
+        return switch (requireOptionType()) {
+            case CALL -> currentStockPrice.compareTo(currentStrikePrice) > 0;
+            case PUT -> currentStockPrice.compareTo(currentStrikePrice) < 0;
+        };
+    }
+
     private BigDecimal requireStockPrice(BigDecimal stockPrice) {
         return Objects.requireNonNull(stockPrice, "stockPrice must not be null");
+    }
+
+    private BigDecimal requireStrikePrice() {
+        return Objects.requireNonNull(strikePrice, "strikePrice must not be null");
+    }
+
+    private OptionType requireOptionType() {
+        return Objects.requireNonNull(optionType, "optionType must not be null");
     }
 }

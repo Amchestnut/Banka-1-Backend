@@ -16,7 +16,7 @@ import java.util.List;
  * All endpoints require the SUPERVISOR role (which includes ADMIN via role hierarchy).
  */
 @RestController
-@RequestMapping("/api/actuaries")
+@RequestMapping("/actuaries")
 @RequiredArgsConstructor
 public class ActuaryController {
 

@@ -25,7 +25,7 @@ import java.util.Set;
  * REST controller for managing brokerage orders.
  */
 @RestController
-@RequestMapping("/api/orders")
+@RequestMapping("/orders")
 @RequiredArgsConstructor
 public class OrderController {
 

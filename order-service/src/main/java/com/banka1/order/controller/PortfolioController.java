@@ -23,7 +23,7 @@ import java.util.Set;
  * Allows clients and agent-role employees (actuaries in business terminology) to view and manage their portfolio positions.
  */
 @RestController
-@RequestMapping("/api/portfolio")
+@RequestMapping("/portfolio")
 @RequiredArgsConstructor
 public class
 PortfolioController {

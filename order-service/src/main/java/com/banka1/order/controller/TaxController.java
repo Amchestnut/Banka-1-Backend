@@ -43,7 +43,7 @@ public class TaxController {
         this.taxService = taxService;
     }
 
-    @PostMapping("/api/tax/collect")
+    @PostMapping("/tax/collect")
     @PreAuthorize("hasRole('SUPERVISOR')")
     public ResponseEntity<Void> collectTax() {
         taxService.collectMonthlyTaxManually();
@@ -77,7 +77,7 @@ public class TaxController {
      *
      * @return list of user tax debts
      */
-    @GetMapping("/api/tax/capital-gains/debts")
+    @GetMapping("/tax/capital-gains/debts")
     @PreAuthorize("hasRole('SUPERVISOR')")
     public ResponseEntity<List<com.banka1.order.dto.TaxDebtResponse>> getAllDebts() {
         return ResponseEntity.ok(taxService.getAllDebts());
@@ -89,13 +89,13 @@ public class TaxController {
      * @param userId ID of the user
      * @return tax debt in RSD
      */
-    @GetMapping("/api/tax/capital-gains/{userId}")
+    @GetMapping("/tax/capital-gains/{userId}")
     @PreAuthorize("hasRole('SUPERVISOR')")
     public ResponseEntity<com.banka1.order.dto.TaxDebtResponse> getUserDebt(@PathVariable Long userId) {
         return ResponseEntity.ok(taxService.getUserDebt(userId));
     }
 
-    @GetMapping("/api/tax/tracking")
+    @GetMapping("/tax/tracking")
     @PreAuthorize("hasRole('SUPERVISOR')")
     public ResponseEntity<List<com.banka1.order.dto.TaxTrackingRowResponse>> getTaxTracking(
             @RequestParam(required = false) String userType,

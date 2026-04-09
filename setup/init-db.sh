@@ -10,5 +10,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE DATABASE transferdb;
     CREATE DATABASE exchange_db;
     CREATE DATABASE verificationdb;
+    CREATE DATABASE transaction_db;
     CREATE DATABASE orderdb;
 EOSQL

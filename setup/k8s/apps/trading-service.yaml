@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: trading-service
+  namespace: banka-1
+spec:
+  selector:
+    app: trading-service
+  ports:
+    - name: http
+      port: 8088
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trading-service
+  namespace: banka-1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trading-service
+  template:
+    metadata:
+      labels:
+        app: trading-service
+    spec:
+      containers:
+        - name: trading-service
+          image: banka/trading-service:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8088
+          envFrom:
+            - configMapRef:
+                name: banka-app-config
+            - secretRef:
+                name: banka-app-secrets
+          env:
+            - name: SERVER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: banka-app-config
+                  key: TRADING_SERVICE_PORT
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: db-pguser-trading-service
+                  key: pgbouncer-jdbc-uri
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: db-pguser-trading-service
+                  key: user
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-pguser-trading-service
+                  key: password
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 25
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 35
+            periodSeconds: 15
+          resources:
+            requests:
+              memory: 256Mi
+            limits:
+              memory: 512Mi

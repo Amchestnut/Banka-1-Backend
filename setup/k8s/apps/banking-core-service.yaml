@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: banking-core-service
+  namespace: banka-1
+spec:
+  selector:
+    app: banking-core-service
+  ports:
+    - name: http
+      port: 8084
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: banking-core-service
+  namespace: banka-1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: banking-core-service
+  template:
+    metadata:
+      labels:
+        app: banking-core-service
+    spec:
+      containers:
+        - name: banking-core-service
+          image: ghcr.io/banka-1-backend/banking-core-servis
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8084
+          envFrom:
+            - configMapRef:
+                name: banka-app-config
+            - secretRef:
+                name: banka-app-secrets
+          env:
+            - name: SERVER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: banka-app-config
+                  key: BANKING_CORE_SERVICE_PORT
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: db-pguser-banking-core-service
+                  key: pgbouncer-jdbc-uri
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: db-pguser-banking-core-service
+                  key: user
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-pguser-banking-core-service
+                  key: password
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 25
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 35
+            periodSeconds: 15
+          resources:
+            requests:
+              memory: 384Mi
+            limits:
+              memory: 768Mi

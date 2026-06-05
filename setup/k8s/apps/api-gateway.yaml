@@ -1,0 +1,497 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-gateway-nginx-template
+  namespace: banka-1
+data:
+  default.conf.template: |
+    upstream user_service {
+        server user-service:${USER_SERVICE_PORT};
+    }
+
+    upstream market_service {
+        server market-service:${MARKET_SERVICE_PORT};
+    }
+
+    upstream banking_core_service {
+        server banking-core-service:${BANKING_CORE_SERVICE_PORT};
+    }
+
+    upstream trading_service {
+        server trading-service:${TRADING_SERVICE_PORT};
+    }
+
+    upstream credit_service {
+        server credit-service:${CREDIT_SERVER_PORT};
+    }
+
+    upstream notification_service {
+        server notification-service:${NOTIFICATION_SERVICE_PORT};
+    }
+
+    upstream saga_orchestrator_service {
+        server saga-orchestrator-service:${SAGA_SERVICE_PORT};
+    }
+
+    upstream interbank_service {
+        server interbank-service:${INTERBANK_SERVICE_PORT};
+    }
+
+    server {
+        listen 80;
+        server_name localhost;
+
+        client_max_body_size 25m;
+
+        location = /employees {
+            proxy_pass http://user_service/employees$is_args$args;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        location /employees/ {
+            proxy_pass http://user_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /clients {
+            proxy_pass http://user_service/clients$is_args$args;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        location /clients/ {
+            proxy_pass http://user_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /accounts/ {
+            proxy_pass http://banking_core_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /api/cards/ {
+            proxy_pass http://banking_core_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /transactions {
+            return 301 /transactions/;
+        }
+        location /transactions/ {
+            proxy_pass http://banking_core_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /transfers {
+            return 301 /transfers/;
+        }
+        location /transfers/ {
+            proxy_pass http://banking_core_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /verification {
+            return 301 /verification/;
+        }
+        location /verification/ {
+            proxy_pass http://banking_core_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /payment-recipients {
+            proxy_pass http://banking_core_service/payment-recipients$is_args$args;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        location /payment-recipients/ {
+            proxy_pass http://banking_core_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /exchange {
+            return 301 /exchange/;
+        }
+        location /exchange/ {
+            proxy_pass http://market_service/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /stock {
+            return 301 /stock/;
+        }
+        location /stock/ {
+            proxy_pass http://market_service/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /stocks {
+            return 301 /stocks/;
+        }
+        location /stocks/ {
+            proxy_pass http://market_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /order {
+            return 301 /order/;
+        }
+        location /order/ {
+            proxy_pass http://trading_service/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /orders {
+            proxy_pass http://trading_service/orders$is_args$args;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        location /orders/ {
+            proxy_pass http://trading_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /portfolio {
+            proxy_pass http://trading_service/portfolio$is_args$args;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        location /portfolio/ {
+            proxy_pass http://trading_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /actuaries {
+            proxy_pass http://trading_service/actuaries$is_args$args;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        location /actuaries/ {
+            proxy_pass http://trading_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /tax {
+            proxy_pass http://trading_service/tax$is_args$args;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        location /tax/ {
+            proxy_pass http://trading_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /otc/ {
+            proxy_pass http://trading_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /funds {
+            proxy_pass http://trading_service/funds$is_args$args;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        location /funds/ {
+            proxy_pass http://trading_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /margin/ {
+            proxy_pass http://trading_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /analytics {
+            proxy_pass http://trading_service/analytics$is_args$args;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        location /analytics/ {
+            proxy_pass http://trading_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /credit {
+            return 301 /credit/;
+        }
+        location /credit/ {
+            proxy_pass http://credit_service/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /api/loans/ {
+            proxy_pass http://credit_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /notifications {
+            proxy_pass http://notification_service/notifications$is_args$args;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        location /notifications/ {
+            proxy_pass http://notification_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /saga {
+            return 301 /saga/;
+        }
+        location /saga/ {
+            proxy_pass http://saga_orchestrator_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /api/interbank/ {
+            proxy_pass http://interbank_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Authorization $http_authorization;
+        }
+
+        location = /interbank {
+            proxy_pass http://interbank_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        location /interbank/ {
+            proxy_pass http://interbank_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /public-stock {
+            proxy_pass http://interbank_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /negotiations {
+            proxy_pass http://interbank_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+        location /negotiations/ {
+            proxy_pass http://interbank_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location ~ ^/user/[0-9]+/[A-Za-z0-9_.-]+$ {
+            proxy_pass http://interbank_service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /gateway-health {
+            access_log off;
+            return 200 'API Gateway is running safely!\n';
+            add_header Content-Type text/plain;
+        }
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: banka-1
+spec:
+  selector:
+    app: api-gateway
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: banka-1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+        - name: api-gateway
+          image: nginx:alpine
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+          env:
+            - name: USER_SERVICE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: banka-app-config
+                  key: USER_SERVICE_PORT
+            - name: BANKING_CORE_SERVICE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: banka-app-config
+                  key: BANKING_CORE_SERVICE_PORT
+            - name: MARKET_SERVICE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: banka-app-config
+                  key: MARKET_SERVICE_PORT
+            - name: TRADING_SERVICE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: banka-app-config
+                  key: TRADING_SERVICE_PORT
+            - name: CREDIT_SERVER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: banka-app-config
+                  key: CREDIT_SERVER_PORT
+            - name: NOTIFICATION_SERVICE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: banka-app-config
+                  key: NOTIFICATION_SERVER_PORT
+            - name: SAGA_SERVICE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: banka-app-config
+                  key: SAGA_SERVER_PORT
+            - name: INTERBANK_SERVICE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: banka-app-config
+                  key: INTERBANK_SERVER_PORT
+          volumeMounts:
+            - name: nginx-template
+              mountPath: /etc/nginx/templates/default.conf.template
+              subPath: default.conf.template
+          readinessProbe:
+            httpGet:
+              path: /gateway-health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /gateway-health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          resources:
+            requests:
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+      volumes:
+        - name: nginx-template
+          configMap:
+            name: api-gateway-nginx-template

@@ -47,11 +47,13 @@ Kreirati `.env` fajl u `setup/` folderu (primer u `setup/.env.example`):
 | `CREDIT_DB_USER` | Korisničko ime baze | `postgres` |
 | `CREDIT_DB_PASSWORD` | Lozinka baze | `postgres` |
 | `JWT_SECRET` | HMAC-SHA256 secret (isti kao ostali servisi) | `my_secret_key` |
-| `SERVICES_USER_URL` | URL employee-service-a (za proveru zaposlenog) | `http://employee-service` |
-| `SERVICES_CARD_URL` | URL card-service-a | `http://card-service:8087` |
-| `SERVICES_VERIFICATION_URL` | URL verification-service-a | `http://verification-service` |
-| `SERVICES_EXCHANGE_URL` | URL exchange-service-a | `http://exchange-service` |
-| `SERVICES_ACCOUNT_URL` | URL account-service-a | `http://account-service:8084` |
+| `SERVICES_USER_URL` | URL `user-service` servisa | `http://user-service:8081` |
+| `SERVICES_BANKING_CORE_URL` | Konsolidovani URL za account/card/verification API-je | `http://banking-core-service:8084` |
+| `SERVICES_MARKET_URL` | Konsolidovani URL za market/exchange API-je | `http://market-service:8085` |
+| `SERVICES_CARD_URL` | Legacy override za card API; podrazumevano pada na `SERVICES_BANKING_CORE_URL` | `http://banking-core-service:8084` |
+| `SERVICES_VERIFICATION_URL` | Legacy override za verification API; podrazumevano pada na `SERVICES_BANKING_CORE_URL` | `http://banking-core-service:8084` |
+| `SERVICES_EXCHANGE_URL` | Legacy override za exchange API; podrazumevano pada na `SERVICES_MARKET_URL` | `http://market-service:8085` |
+| `SERVICES_ACCOUNT_URL` | Legacy override za account API; podrazumevano pada na `SERVICES_BANKING_CORE_URL` | `http://banking-core-service:8084` |
 | `SKIP_VERIFICATION` | Da li preskočiti verifikaciju | `true` |
 | `RABBITMQ_HOST` | Hostname RabbitMQ brokera | `rabbitmq` |
 | `RABBITMQ_PORT` | Port RabbitMQ brokera | `5672` |

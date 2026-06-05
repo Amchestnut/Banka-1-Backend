@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: credit-service
+  namespace: banka-1
+spec:
+  selector:
+    app: credit-service
+  ports:
+    - name: http
+      port: 8089
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: credit-service
+  namespace: banka-1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: credit-service
+  template:
+    metadata:
+      labels:
+        app: credit-service
+    spec:
+      containers:
+        - name: credit-service
+          image: ghcr.io/raf-si-2025/banka-1-backend/credit-service:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8089
+          envFrom:
+            - configMapRef:
+                name: banka-app-config
+            - secretRef:
+                name: banka-app-secrets
+          env:
+            - name: CREDIT_SERVER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: banka-app-config
+                  key: CREDIT_SERVER_PORT
+            - name: SERVER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: banka-app-config
+                  key: CREDIT_SERVER_PORT
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: db-pguser-credit-service
+                  key: jdbc-uri
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: db-pguser-credit-service
+                  key: user
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-pguser-credit-service
+                  key: password
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 25
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 35
+            periodSeconds: 15
+          resources:
+            requests:
+              memory: 256Mi
+            limits:
+              memory: 512Mi

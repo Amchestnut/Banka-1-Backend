@@ -143,6 +143,69 @@ curl -X POST http://localhost:9093/api/v2/alerts \
 
 Alertmanager will forward it to the bot, which will DM you on Discord.
 
+## Triggering real alerts (demo mode)
+
+Two helper scripts in `setup/` let you fire each notification on a running stack —
+handy for a demo or a screen recording. They are Windows PowerShell scripts.
+
+### `setup/demo-mode.ps1` — fast-firing thresholds
+
+Production rules use realistic thresholds and multi-minute `for` windows, so warning
+alerts take a while to fire. Demo mode swaps in a copy of the rules with lowered
+thresholds and a short `for` (~15-20s) so everything fires within ~30-60s.
+
+```powershell
+./setup/demo-mode.ps1 on        # apply demo thresholds, reload Prometheus
+./setup/demo-mode.ps1 off       # restore production rules
+./setup/demo-mode.ps1 status    # show which set is active
+```
+
+`on` snapshots the live `prometheus-rules.yml` into a transient
+`prometheus-rules.yml.bak` and swaps in `prometheus-rules.demo.yml`; `off` restores
+the snapshot and deletes it. The standard `prometheus-rules.yml` stays the single
+source of truth (never overwritten permanently).
+
+Trigger / resolve pairs (run `demo-mode.ps1 on` first for the warning alerts):
+
+```powershell
+# ServiceDown — fire / resolve
+docker stop  banka_credit_service
+docker start banka_credit_service
+
+# PostgresConnectionsHigh — fire / resolve
+1..35 | ForEach-Object { Start-Process -WindowStyle Hidden docker -ArgumentList 'exec banka_postgres psql -U postgres -d postgres -c "select pg_sleep(300)"' }
+docker exec banka_postgres psql -U postgres -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE query ILIKE 'select pg_sleep%' AND pid <> pg_backend_pid();"
+
+# RabbitMQBacklog + RabbitMQNoConsumers — fire / resolve
+$h = @{ Authorization = "Basic " + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("guest:guest")) }
+$body = '{"properties":{},"routing_key":"demo.backlog","payload":"hello","payload_encoding":"string"}'
+irm -Method Put "http://localhost:15672/api/queues/%2F/demo.backlog" -Headers $h -ContentType application/json -Body '{"durable":true}'
+1..20 | ForEach-Object { irm -Method Post "http://localhost:15672/api/exchanges/%2F/amq.default/publish" -Headers $h -ContentType application/json -Body $body | Out-Null }
+irm -Method Delete "http://localhost:15672/api/queues/%2F/demo.backlog/contents" -Headers $h
+irm -Method Delete "http://localhost:15672/api/queues/%2F/demo.backlog" -Headers $h
+```
+
+> The RabbitMQ `Put` (declare queue) must run before publishing — messages sent to a
+> non-existent queue are silently dropped.
+
+### `setup/probe-slow-demo.ps1` — trigger `ServiceProbeSlow`
+
+`ServiceProbeSlow` needs a slow health probe, which won't happen on its own. This
+script injects +1500ms latency on credit-service's health probe via the existing
+`toxiproxy` container and temporarily re-points the blackbox probe through it.
+
+```powershell
+./setup/probe-slow-demo.ps1 on     # inject latency -> ⚠️ ServiceProbeSlow in ~40s
+./setup/probe-slow-demo.ps1 off    # remove latency, revert probe -> ✅ resolved
+```
+
+Run `demo-mode.ps1 on` first: in demo mode the threshold is `> 0.5s`, which the
+injected 1.5s clearly crosses (production threshold is `> 1.5s`, only borderline).
+
+> These scripts call the toxiproxy admin API with a non-browser `User-Agent`
+> (toxiproxy rejects browser-like agents), and a Prometheus reload happens on each
+> toggle.
+
 ## Tests
 
 ```bash

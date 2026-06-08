@@ -3,15 +3,51 @@
 Small Node.js service that receives Alertmanager webhook POSTs and forwards
 each alert as a Discord DM to the developer running this stack.
 
-It is part of the Monitoring / Alerting pipeline:
+It is part of the Monitoring / Alerting pipeline. All backend services are Go and do
+not emit application metrics, so they are monitored **black-box** via exporters:
 
 ```
-service crashes
-  -> Prometheus rule fires (prometheus-rules.yml)
-    -> Alertmanager (setup/alertmanager.yml)
-      -> POST http://discord-alert-bot:9094/alert
-        -> Discord API
-          -> DM to DEVELOPER_DISCORD_ID
+blackbox-exporter  (HTTP health probes)  ─┐
+postgres-exporter  (DB connections)       ├─> Prometheus (setup/prometheus-rules.yml)
+rabbitmq-exporter  (queue depth)          ─┘     -> Alertmanager (setup/alertmanager.yml)
+                                                   -> POST http://discord-alert-bot:9094/alert
+                                                     -> Discord API -> DM to DEVELOPER_DISCORD_ID
+```
+
+## Notifications it sends
+
+The bot forwards every alert defined in `setup/prometheus-rules.yml`, rendered as a
+Discord DM in one of four shapes:
+
+| Shape | Looks like | When |
+|---|---|---|
+| 🔴 critical + Component | `🔴 [FIRING] <name>` + `Component: infrastructure` | an infra component is down |
+| 🔴 critical + Service | `🔴 [FIRING] <name>` + `Service: <svc>` | a service is down |
+| ⚠️ warning + Service | `⚠️ [FIRING] <name>` + `Service: <svc>` | a soft threshold was crossed |
+| ✅ resolved | `✅ [RESOLVED] <name>` … | the condition cleared (any alert) |
+
+### Alert catalogue
+
+| Alert | Severity | Source | Fires when |
+|---|---|---|---|
+| `ServiceDown` | 🔴 critical | blackbox-exporter | a service health probe fails — one per service: `notification`, `user`, `banking-core`, `market`, `trading`, `credit`, `saga-orchestrator`, `interbank` |
+| `OtelCollectorDown` | 🔴 critical | Prometheus `up` | the OTel collector is unreachable |
+| `AlertmanagerDown` | 🔴 critical | Prometheus `up` | Alertmanager is unreachable (self-referential — delivered on recovery) |
+| `ServiceProbeSlow` | ⚠️ warning | blackbox-exporter | a service health probe is slow (> 1.5s) |
+| `PostgresConnectionsHigh` | ⚠️ warning | postgres-exporter | active DB connections > 80% of `max_connections` (200) |
+| `RabbitMQBacklog` | ⚠️ warning | rabbitmq-exporter | a queue has > 1000 unconsumed messages |
+| `RabbitMQNoConsumers` | ⚠️ warning | rabbitmq-exporter | a queue has messages but 0 consumers |
+
+Every alert also sends a ✅ **RESOLVED** DM when its condition clears
+(`send_resolved: true` in `setup/alertmanager.yml`).
+
+### Example DM
+
+```
+🔴 [FIRING] ServiceDown
+credit-service je DOWN
+Health proba ka http://banka_credit_service:8089/health ne uspeva. Servis je verovatno pao ili ne odgovara.
+Service: credit-service
 ```
 
 ## How to set up the Discord bot account (one-time, manual)

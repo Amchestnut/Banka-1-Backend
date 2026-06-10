@@ -277,6 +277,65 @@ services:
         reservations:
           memory: 64M
 
+  # =========================================================================
+  # Black-box monitoring exporters — mere servise SPOLJA, kod servisa se NE dira.
+  # blackbox: health probe (down + latencija) | postgres/rabbitmq: infra metрике
+  # cadvisor: memorija/CPU/restart po kontejneru.
+  # =========================================================================
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.25.0
+    container_name: banka_blackbox_exporter
+    restart: unless-stopped
+    volumes:
+      - ./blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    expose:
+      - "9115"
+    networks:
+      - banka-network
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: banka_postgres_exporter
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@banka_postgres:5432/postgres?sslmode=disable"
+    expose:
+      - "9187"
+    depends_on:
+      - postgres
+    networks:
+      - banka-network
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+  # Cita postojeci RabbitMQ management API (15672) — NE dira rabbitmq kontejner.
+  # NOTE: tag :latest radi pouzdano; pin-uj na konkretan RC posle verifikacije.
+  rabbitmq-exporter:
+    image: kbudde/rabbitmq-exporter:latest
+    container_name: banka_rabbitmq_exporter
+    restart: unless-stopped
+    environment:
+      RABBIT_URL: "http://rabbitmq:15672"
+      RABBIT_USER: "${RABBITMQ_USERNAME:-guest}"
+      RABBIT_PASSWORD: "${RABBITMQ_PASSWORD:-guest}"
+      PUBLISH_PORT: "9419"
+    expose:
+      - "9419"
+    depends_on:
+      - rabbitmq
+    networks:
+      - banka-network
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
   loki:
     image: grafana/loki:3.1.1
     container_name: banka_loki

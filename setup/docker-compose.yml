@@ -89,15 +89,20 @@ services:
           memory: 192M
 
   # Toxiproxy TCP proxy for SAGA integration tests (SG-09b/c, SG-10).
-  # Admin API on :8474; proxied ports configured at test runtime.
+  # Admin API on :8474. Proxies for banking-core (:18084) and trading-service
+  # (:18088) are created at boot from toxiproxy.json as transparent passthroughs;
+  # tests add/remove toxics on them at runtime via the admin API.
   toxiproxy:
     image: ghcr.io/shopify/toxiproxy:2.10.0
     container_name: banka_toxiproxy
     restart: unless-stopped
+    command: ["-host=0.0.0.0", "-config=/etc/toxiproxy/toxiproxy.json"]
+    volumes:
+      - ./toxiproxy/toxiproxy.json:/etc/toxiproxy/toxiproxy.json:ro
     ports:
       - "8474:8474"   # admin API
-      - "18084:18084" # banking-core proxy port (tests configure at runtime)
-      - "18088:18088" # trading-service proxy port (tests configure at runtime)
+      - "18084:18084" # banking-core proxy port (toxics configured at test runtime)
+      - "18088:18088" # trading-service proxy port (toxics configured at test runtime)
     networks:
       - banka-network
 
@@ -932,7 +937,9 @@ services:
       # --- RabbitMQ broker URL (double-prefix: Config.Saga.RabbitMQURL) ---
       SAGA_SAGA_RABBITMQ_URL: "amqp://${RABBITMQ_USERNAME:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:${RABBITMQ_PORT:-5672}/"
       # --- Downstream Java service URLs (double-prefix: Config.Saga.Services.*) ---
-      SAGA_SAGA_SERVICES_BANKING_CORE_URL: "http://banking-core-service:${BANKING_CORE_SERVICE_PORT:-8084}"
+      # Banking-core traffic is routed through Toxiproxy (transparent passthrough
+      # by default) so SAGA e2e tests can inject latency/outages (SG-09b/c, SG-10).
+      SAGA_SAGA_SERVICES_BANKING_CORE_URL: "${SAGA_BANKING_CORE_URL:-http://toxiproxy:18084}"
       SAGA_SAGA_SERVICES_TRADING_URL: "http://trading-service:${TRADING_SERVICE_PORT:-8088}"
       SAGA_SAGA_SERVICES_MARKET_URL: "http://market-service:${MARKET_SERVICE_PORT:-8085}"
       SAGA_SAGA_SERVICES_TIMEOUT: "${SAGA_SERVICES_TIMEOUT:-30s}"
@@ -947,6 +954,7 @@ services:
       trading-service: { condition: service_healthy }
       market-service: { condition: service_healthy }
       otel-collector: { condition: service_started }
+      toxiproxy: { condition: service_started }
     expose:
       - "${SAGA_SERVER_PORT:-8095}"
     ports:
